@@ -17,14 +17,18 @@ class Dog;
 
 class Dog {
     public:
+    
+        void move();
+    
         vec3 position;
         vec3 orientation;
-        float velocity;
+        float speed;
         float theta;
         float pathRadius;
         float modelRadius;
         float offset;
         int id;
+    
     private:
         
 

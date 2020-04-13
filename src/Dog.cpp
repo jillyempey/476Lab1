@@ -6,3 +6,7 @@
 #include "Texture.h"
 
 
+void Dog::move() {
+    position += speed * orientation;
+    
+}

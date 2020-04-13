@@ -54,6 +54,15 @@ public:
     vector<shared_ptr<Shape>> dummy;
     float dummyTheta = 0;
     
+    float gridWidth = 50;
+    float gridLength = 50;
+    
+    double dogSpawnIntervalLow = 7.0;
+    
+    int maxNumDogs = 30;
+    
+    int dogsCollected = 0;
+    
     vector<std::vector<std::shared_ptr<Particle>>> allParticles;
     std::vector<std::shared_ptr<Particle>> particles;
 	
@@ -180,10 +189,6 @@ public:
 		{
 			camRot += 0.314f;
 		}
-        if (key == GLFW_KEY_R && action == GLFW_PRESS)
-        {
-            trees[0].rain = true;
-        }
 	}
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
@@ -537,13 +542,27 @@ public:
             allShapes[0]->draw(prog2);
         Model->popMatrix();
     }
+    float get_rotation(vec3 a, vec3 b){
+        // theta = arccos(dot(a, b) / (magnitude(a) * magnitude(b))
+        float dotProd = dot(a, b);
+        float magnitudeA = length(a);
+        float magnitudeB = length(b);
+        return acos(dotProd / (magnitudeA * magnitudeB));
+    }
+    
+//    float rotateDog(vec3 currentOrientation, vec3 goalOrientation) {
+//
+//
+//    goalOrientation = goalOrientation.subtract(tM.position);
+//    Return -Math.atan2(lAt.z, lAt.x) - Math.PI/2;
+//    }
     
     void drawMovableDog(std::shared_ptr<MatrixStack> Model, Dog *dog) {
         //dog->position.x = cos(dog->theta) * dog->position.x + dog->offset;
         //dog->position.z = sin(dog->theta) * dog->position.z + dog->offset;
         //cout << dog->offset << endl;
-        float dogx = dog->position.x + cos(dog->theta) * dog->pathRadius + dog->velocity;
-        float dogz = dog->position.z + sin(dog->theta) * dog->pathRadius + dog->velocity;
+        float dogx = dog->position.x;
+        float dogz = dog->position.z;
         // eye.x = dogX;
         // eye.z = dogZ + 14;
         for(int j = 0; j < trees.size(); j++){
@@ -563,10 +582,13 @@ public:
         
         SetMaterial(10);
         Model->pushMatrix();
-        Model->rotate(dog->theta, vec3(0, 1, 0));
+        //Model->rotate(get_rotation(vec3(1, 0, 0), dog->orientation), vec3(0, 1, 0));
         //Model->translate(vec3(0, 0, -10));
         Model->translate(vec3(dogx, 0, dogz));
-        Model->rotate(5, vec3(0, 1, 0));
+        
+        float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159;
+        cout << rotation << endl;
+        Model->rotate(rotation, vec3(0, 1, 0));
         Model->scale(vec3(.5, .5, .5));
         
         setModel(prog2, Model);
@@ -654,19 +676,62 @@ public:
             Dog newDog;
             newDog.theta = 0;
             newDog.offset = randFloat(0, 10);
-            newDog.position = vec3(randFloat(-20, 20), 0, randFloat(-20, 20));
+            newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
             cout << newDog.position.x << " " << newDog.position.y << " " << newDog.position.z << endl;
-            newDog.velocity = 2;
+            newDog.speed = .3;
             newDog.id = i;
             newDog.pathRadius = randFloat(5, 10);
+            newDog.modelRadius = 2;
+            newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
             dogs.push_back(newDog);
         }
     }
     void updateDogs(){
         for(int i = 0; i < dogs.size(); i++){
-            dogs[i].theta -= .005;
+            checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);
+            dogs[i].move();
         }
     }
+    
+    void checkForCollisions(int dogIndex, float radius, vec3 position) {
+        
+        // check collisions against all the dogs
+        for (int i = dogIndex + 1; i < dogs.size(); i++) {
+            if (distance(position, dogs[i].position) <= radius + dogs[i].modelRadius) {
+                if (dogIndex == -1) {
+                    collectDog(i);
+                    
+                } else {
+                    dogs[dogIndex].orientation = dogs[dogIndex].orientation * vec3(-1, 1, -1);
+                }
+                return;
+            }
+        }
+        
+        float gridWidthMin = -gridWidth/2;
+        float gridWidthMax = gridWidth/2;
+        float gridLengthMin = -gridLength/2;
+        float gridLengthMax = gridLength/2;
+        
+        // check collisions against all the walls
+        if (dogIndex != -1) {
+            if (dogs[dogIndex].position.x >= gridWidthMax - radius || dogs[dogIndex].position.x <= gridWidthMin + radius) {
+                dogs[dogIndex].orientation.x *= -1;
+            }
+            if (dogs[dogIndex].position.z >= gridLengthMax - radius || dogs[dogIndex].position.z <= gridLengthMin + radius) {
+                dogs[dogIndex].orientation.z *= -1;
+                
+            }
+        }
+    }
+    
+    
+    void collectDog(int dogIndex){
+        dogs[dogIndex].speed = 0;
+        dogsCollected += 1;
+        
+    }
+    
 	void render()
 	{
 		// Get current frame buffer size.
@@ -687,6 +752,7 @@ public:
         auto Model = make_shared<MatrixStack>();
         auto View = make_shared<MatrixStack>();
 
+        checkForCollisions(-1, 2, eye);
 		// Create the matrix stacks
 		auto P = make_shared<MatrixStack>();
 		auto MV = make_shared<MatrixStack>();
@@ -703,24 +769,34 @@ public:
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
         glUniform3f(prog2->getUniform("lightPos"), 0, 10, 0);
-        for (int i = 0; i < trees.size()/2; i++) {
-            drawTree(trees[i].x, .1, trees[i].z, trees[i].thetaOffset, trees[i].material, Model);
+        //for (int i = 0; i < trees.size()/2; i++) {
+            //drawTree(trees[i].x, .1, trees[i].z, trees[i].thetaOffset, trees[i].material, Model);
             //drawDummy(dummies[i].x, dummies[i].y, dummies[i].z, dummies[i].material, Model);
-        }
+        //}
+        
         SetMaterial(0);
+        
+        // Generate a dog at a random location if 7 seconds have
+        // passed since the last dog was generated
+        double curTime = glfwGetTime();
+//        if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
+//            glfwSetTime(0.0);
+//            generateDogs(1);
+//        }
+        
         for(int i = 0; i < dogs.size(); i+=1){
             drawMovableDog(Model, &(dogs[i]));
         }
+        
         SetMaterial(2);
         Model->pushMatrix();
         Model->translate(vec3(0, -1.5, 0));
-        Model->scale(vec3(200, .5, 200));
+        Model->scale(vec3(gridWidth, .5, gridLength));
         setModel(prog2, Model);
         allShapes[1]->draw(prog2);
         Model->popMatrix();
         
        
-        
         prog2->unbind();
 		// Draw
 		prog->bind();
@@ -867,7 +943,7 @@ int main(int argc, char **argv)
 	application->initGeom(resourceDir);
     application->initParticles();
 
-    application->generateDogs(2);
+    application->generateDogs(1);
 
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 
