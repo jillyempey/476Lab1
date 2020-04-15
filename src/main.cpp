@@ -17,6 +17,7 @@
 #include "Particle.h"
 #include "WindowManager.h"
 #include "Dog.h"
+#include "Player.h"
 
  // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
@@ -59,7 +60,7 @@ public:
     
     double dogSpawnIntervalLow = 7.0;
     
-    int maxNumDogs = 30;
+    int maxNumDogs = 1;
     
     int dogsCollected = 0;
     
@@ -82,7 +83,7 @@ public:
     float theta = -1.58;
     float xTrans = 4;
     //float dogTheta = 0;
-    vec3 eye = glm::vec3(0, 0, 40);
+    vec3 eye = glm::vec3(0, 15, 0);
     vec3 lookAtPoint = glm::vec3(0, 0, 1);
     vec3 upVector = glm::vec3(0, 1, 0);
     
@@ -90,6 +91,8 @@ public:
     vec3 w = -(glm::normalize(gaze));
     vec3 u = glm::normalize(glm::cross(upVector, w));
     vec3 v = glm::normalize(glm::cross(w, u));
+    vec3 dogMin;
+    vec3 dogMax;
     
     bool move = true;
     
@@ -183,11 +186,33 @@ public:
         }
 		if (key == GLFW_KEY_K && action == GLFW_PRESS)
 		{
-			camRot -= 0.314f;
+			//camRot -= 0.314f;
 		}
 		if (key == GLFW_KEY_L && action == GLFW_PRESS)
 		{
 			camRot += 0.314f;
+		}
+        if (key == GLFW_KEY_O && action == GLFW_PRESS)
+		{
+			speed += 1;
+		}
+
+        // dog orientation debug:
+        if (key == GLFW_KEY_I && action == GLFW_PRESS)
+		{
+			dogs[0].orientation = vec3(0, 0, 1);
+		}
+        if (key == GLFW_KEY_K && action == GLFW_PRESS)
+		{
+			dogs[0].orientation = vec3(1, 0, 0);
+		}
+        if (key == GLFW_KEY_M && action == GLFW_PRESS)
+		{
+			dogs[0].orientation = vec3(0, 0, -1);
+		}
+        if (key == GLFW_KEY_J && action == GLFW_PRESS)
+		{
+			dogs[0].orientation = vec3(-1, 0, 0);
 		}
 	}
 
@@ -214,7 +239,7 @@ public:
 		if (action == GLFW_PRESS)
 		{
 			glfwGetCursorPos(window, &posX, &posY);
-			cout << "Pos X " << posX << " Pos Y " << posY << endl;
+			//cout << "Pos X " << posX << " Pos Y " << posY << endl;
 		}
 	}
 
@@ -377,6 +402,8 @@ public:
                 mesh = make_shared<Shape>();
                 mesh->createShape(TOshapes[i]);
                 mesh->measure();
+                dogMin = mesh->min;
+                dogMax = mesh->max;
                 mesh->init();
                 allShapes.push_back(mesh);
             }
@@ -573,28 +600,38 @@ public:
             float rad1 = .5;
             float rad2 = 1;
             
-            if (d < (rad1 + rad2)) {
-                trees[j].rain = true;
-                isRaining = true;
-            }
+            // if (d < (rad1 + rad2)) {
+            //     trees[j].rain = true;
+            //     isRaining = true;
+            // }
             
         }
         
         SetMaterial(10);
         Model->pushMatrix();
-        //Model->rotate(get_rotation(vec3(1, 0, 0), dog->orientation), vec3(0, 1, 0));
+        //Model->rotate(5, vec3(0, 1, 0));
         //Model->translate(vec3(0, 0, -10));
-        Model->translate(vec3(dogx, 0, dogz));
+        //Model->translate(vec3(dogx, 0, dogz));
         
-        float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159;
+        float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159 ;//- 90.0;
+        if(dog->orientation.x > 0){
+            rotation *= -1;
+        }
         cout << rotation << endl;
+
+        // if(dog->orientation.z > 0){
+        //     rotation += 180.0;
+        // }
+        //cout << rotation << endl;
+        //Model->translate(vec3(1.15945 ,-1.17137 ,1.34475));
+
         Model->rotate(rotation, vec3(0, 1, 0));
         Model->scale(vec3(.5, .5, .5));
-        
+        Model->translate(vec3(-1.15945 ,1.17137 ,-1.34475));
         setModel(prog2, Model);
         // head
         allShapes[2]->draw(prog2);
-        Model->pushMatrix();
+        //Model->pushMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, -1.5));
         Model->rotate(-.7*sTheta, vec3(1, 0, 0));
@@ -651,7 +688,7 @@ public:
         // bottom
         allShapes[5]->draw(prog2);
         Model->popMatrix();
-        Model->popMatrix();
+        //Model->popMatrix();
     }
     void drawDummy(double x, double y, double z, int material, std::shared_ptr<MatrixStack> Model) {
         // draw dummy
@@ -676,13 +713,16 @@ public:
             Dog newDog;
             newDog.theta = 0;
             newDog.offset = randFloat(0, 10);
-            newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
-            cout << newDog.position.x << " " << newDog.position.y << " " << newDog.position.z << endl;
-            newDog.speed = .3;
+            //newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
+            newDog.position = vec3(0,0,0);
+            //cout << newDog.position.x << " " << newDog.position.y << " " << newDog.position.z << endl;
+            newDog.speed = 0;//.3;
             newDog.id = i;
             newDog.pathRadius = randFloat(5, 10);
             newDog.modelRadius = 2;
-            newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
+            newDog.isCollected = false;
+            //newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
+            newDog.orientation = vec3(0,0,1);
             dogs.push_back(newDog);
         }
     }
@@ -698,8 +738,9 @@ public:
         // check collisions against all the dogs
         for (int i = dogIndex + 1; i < dogs.size(); i++) {
             if (distance(position, dogs[i].position) <= radius + dogs[i].modelRadius) {
-                if (dogIndex == -1) {
+                if (dogIndex == -1 && !dogs[i].isCollected) {
                     collectDog(i);
+                    dogs[i].isCollected = true;
                     
                 } else {
                     dogs[dogIndex].orientation = dogs[dogIndex].orientation * vec3(-1, 1, -1);
@@ -729,6 +770,8 @@ public:
     void collectDog(int dogIndex){
         dogs[dogIndex].speed = 0;
         dogsCollected += 1;
+        cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
+
         
     }
     
@@ -779,10 +822,10 @@ public:
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
-//        if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
-//            glfwSetTime(0.0);
-//            generateDogs(1);
-//        }
+       if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
+           glfwSetTime(0.0);
+           generateDogs(1);
+       }
         
         for(int i = 0; i < dogs.size(); i+=1){
             drawMovableDog(Model, &(dogs[i]));
@@ -837,6 +880,7 @@ public:
             sTheta = sin(glfwGetTime());
         }
 		P->popMatrix();
+
 	}
     void SetMaterial(int i) {
         switch (i) {
@@ -928,7 +972,7 @@ int main(int argc, char **argv)
 
 	// Your main will always include a similar set up to establish your window
 	// and GL context, etc.
-
+    Player p = Player();
 	WindowManager *windowManager = new WindowManager();
 	windowManager->init(512, 512);
 	windowManager->setEventCallbacks(application);
@@ -941,10 +985,11 @@ int main(int argc, char **argv)
 	application->initTex(resourceDir);
 	
 	application->initGeom(resourceDir);
+    cout << (application->dogMin.x + application->dogMax.x) / 2 << " " << (application->dogMin.y + application->dogMax.y) / 2 << " " << (application->dogMin.z + application->dogMax.z) / 2 << " " << endl;
     application->initParticles();
 
     application->generateDogs(1);
-
+    
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 
 	// Loop until the user closes the window.

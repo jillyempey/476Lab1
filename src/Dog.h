@@ -22,12 +22,14 @@ class Dog {
     
         vec3 position;
         vec3 orientation;
+        vec3 lookAt;
         float speed;
         float theta;
         float pathRadius;
         float modelRadius;
         float offset;
         int id;
+        bool isCollected;
     
     private:
         

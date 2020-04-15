@@ -8,5 +8,4 @@
 
 void Dog::move() {
     position += speed * orientation;
-    
 }
