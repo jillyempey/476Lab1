@@ -93,6 +93,7 @@ public:
     vec3 v = glm::normalize(glm::cross(w, u));
     vec3 dogMin;
     vec3 dogMax;
+    vec3 dogMiddle;
     
     bool move = true;
     
@@ -402,9 +403,10 @@ public:
                 mesh = make_shared<Shape>();
                 mesh->createShape(TOshapes[i]);
                 mesh->measure();
+                mesh->init();
                 dogMin = mesh->min;
                 dogMax = mesh->max;
-                mesh->init();
+                dogMiddle = vec3((dogMin.x + dogMax.x)/2 , (dogMin.y + dogMax.y)/2, (dogMin.z + dogMax.z)/2);
                 allShapes.push_back(mesh);
             }
             
@@ -611,23 +613,26 @@ public:
         Model->pushMatrix();
         //Model->rotate(5, vec3(0, 1, 0));
         //Model->translate(vec3(0, 0, -10));
-        //Model->translate(vec3(dogx, 0, dogz));
+        Model->translate(vec3(dogx, 0, dogz));
         
-        float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159 ;//- 90.0;
+        //float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159 ;//- 90.0;
+        float rotation = get_rotation(vec3(0, 0, 1), dog->orientation) ;//- 90.0;
+
         if(dog->orientation.x > 0){
             rotation *= -1;
         }
-        cout << rotation << endl;
+        //cout << rotation << endl;
 
-        // if(dog->orientation.z > 0){
-        //     rotation += 180.0;
-        // }
+        if(dog->orientation.z > 0){
+            //cout << "positive z" << endl;
+            rotation += 1.5708;
+        }
         //cout << rotation << endl;
         //Model->translate(vec3(1.15945 ,-1.17137 ,1.34475));
 
         Model->rotate(rotation, vec3(0, 1, 0));
         Model->scale(vec3(.5, .5, .5));
-        Model->translate(vec3(-1.15945 ,1.17137 ,-1.34475));
+        Model->translate(-dogMiddle);
         setModel(prog2, Model);
         // head
         allShapes[2]->draw(prog2);
@@ -713,16 +718,16 @@ public:
             Dog newDog;
             newDog.theta = 0;
             newDog.offset = randFloat(0, 10);
-            //newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
-            newDog.position = vec3(0,0,0);
+            newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
+            //newDog.position = vec3(0,0,0);
             //cout << newDog.position.x << " " << newDog.position.y << " " << newDog.position.z << endl;
-            newDog.speed = 0;//.3;
+            newDog.speed = .3;
             newDog.id = i;
             newDog.pathRadius = randFloat(5, 10);
             newDog.modelRadius = 2;
             newDog.isCollected = false;
-            //newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
-            newDog.orientation = vec3(0,0,1);
+            newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
+            //newDog.orientation = vec3(0,0,1);
             dogs.push_back(newDog);
         }
     }
@@ -985,7 +990,7 @@ int main(int argc, char **argv)
 	application->initTex(resourceDir);
 	
 	application->initGeom(resourceDir);
-    cout << (application->dogMin.x + application->dogMax.x) / 2 << " " << (application->dogMin.y + application->dogMax.y) / 2 << " " << (application->dogMin.z + application->dogMax.z) / 2 << " " << endl;
+    cout << application->dogMiddle.x << " " << application->dogMiddle.y << " " << application->dogMiddle.z << " " << endl;
     application->initParticles();
 
     application->generateDogs(1);
