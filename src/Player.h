@@ -21,17 +21,21 @@ class Player {
         int dogsCollected;
         float phi;
         float theta;
-        float xTrans;
-        //float dogTheta = 0;
         vec3 eye;
         vec3 lookAtPoint;
         vec3 upVector;
+    
+        float speed;
         
         vec3 gaze;
         vec3 w;
         vec3 u;
         vec3 v;
         void move();
+        void moveForward();
+        void moveBackwards();
+        void moveLeft();
+        void moveRight();
     
     private:
         

@@ -12,7 +12,8 @@ class Texture
 {
 
 public:
-
+    Texture();
+    virtual ~Texture();
 	void setFilename(const std::string &f) { filename = f; }
 	void init();
 	void setUnit(GLint u) { unit = u; }

@@ -60,13 +60,14 @@ public:
     
     double dogSpawnIntervalLow = 7.0;
     
-    int maxNumDogs = 1;
+    int maxNumDogs = 4;
     
     int dogsCollected = 0;
     
     vector<std::vector<std::shared_ptr<Particle>>> allParticles;
     std::vector<std::shared_ptr<Particle>> particles;
 	
+    Player player = Player();
 
 	// CPU array for particles - redundant with particle structure
 	// but simple
@@ -79,18 +80,7 @@ public:
     
     bool isRaining = false;
     
-    float phi = -.3;
-    float theta = -1.58;
-    float xTrans = 4;
-    //float dogTheta = 0;
-    vec3 eye = glm::vec3(0, 15, 0);
-    vec3 lookAtPoint = glm::vec3(0, 0, 1);
-    vec3 upVector = glm::vec3(0, 1, 0);
-    
-    vec3 gaze = lookAtPoint - eye;
-    vec3 w = -(glm::normalize(gaze));
-    vec3 u = glm::normalize(glm::cross(upVector, w));
-    vec3 v = glm::normalize(glm::cross(w, u));
+
     vec3 dogMin;
     vec3 dogMax;
     vec3 dogMiddle;
@@ -135,33 +125,25 @@ public:
 	{
 		keyToggles[key] = ! keyToggles[key];
 
-        w = -(glm::normalize(gaze));
-        u = glm::normalize(glm::cross(upVector, w));
-        v = glm::normalize(glm::cross(w, u));
+        player.w = -(glm::normalize(player.gaze));
+        player.u = glm::normalize(glm::cross(player.upVector, player.w));
+        player.v = glm::normalize(glm::cross(player.w, player.u));
         
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
         if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-            eye -= speed * u;
-            lookAtPoint -= speed * u;
-            gaze = lookAtPoint - eye;
+            player.moveLeft();
         }
         if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-            eye += speed * u;
-            lookAtPoint += speed * u;
-            gaze = lookAtPoint - eye;
+            player.moveRight();
         }
         if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-            eye += speed * w;
-            lookAtPoint += speed * w;
-            gaze = lookAtPoint - eye;
+            player.moveBackwards();
         }
         if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-            eye -= speed * w;
-            lookAtPoint -= speed * w;
-            gaze = lookAtPoint - eye;
+            player.moveForward();
         }
         if (key == GLFW_KEY_X && action == GLFW_PRESS) {
             
@@ -219,18 +201,18 @@ public:
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
 	{
-        phi += .05*deltaY;
-        theta -= .05*deltaX;
+        player.phi += .05*deltaY;
+        player.theta -= .05*deltaX;
         
-        if (phi > 1.39626) {
-            phi = 1.39626;
-        } else if (phi < -1.39626) {
-            phi = -1.39626;
+        if (player.phi > 1.39626) {
+            player.phi = 1.39626;
+        } else if (player.phi < -1.39626) {
+            player.phi = -1.39626;
         }
         
-        lookAtPoint.x = cos(phi)*cos(theta) + eye.x;
-        lookAtPoint.y = sin(phi) + eye.y;
-        lookAtPoint.z = cos(phi) * cos(1.57079632679 - theta) + eye.z;
+        player.lookAtPoint.x = cos(player.phi)*cos(player.theta) + player.eye.x;
+        player.lookAtPoint.y = sin(player.phi) + player.eye.y;
+        player.lookAtPoint.z = cos(player.phi) * cos(1.57079632679 - player.theta) + player.eye.z;
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -330,9 +312,9 @@ public:
 		texture->setUnit(0);
 		texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         texture0 = make_shared<Texture>();
-        texture0->setFilename(resourceDirectory + "/whiteTex.jpg");
+        texture0->setFilename(resourceDirectory + "/grass.jpg");
         texture0->init();
-        texture0->setUnit(0);
+        texture0->setUnit(2);
         texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 	}
 
@@ -592,8 +574,8 @@ public:
         //cout << dog->offset << endl;
         float dogx = dog->position.x;
         float dogz = dog->position.z;
-        // eye.x = dogX;
-        // eye.z = dogZ + 14;
+        // player.eye.x = dogX;
+        // player.eye.z = dogZ + 14;
         for(int j = 0; j < trees.size(); j++){
             float num = pow((trees[j].x - dogx),2);
             //            num += pow((positions[k].y - positions[i].y),2);
@@ -618,15 +600,15 @@ public:
         //float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159 ;//- 90.0;
         float rotation = get_rotation(vec3(0, 0, 1), dog->orientation) ;//- 90.0;
 
-        if(dog->orientation.x > 0){
+        if(dog->orientation.x < 0){
             rotation *= -1;
         }
         //cout << rotation << endl;
 
-        if(dog->orientation.z > 0){
-            //cout << "positive z" << endl;
-            rotation += 1.5708;
-        }
+//        if(dog->orientation.z > 0){
+//            //cout << "positive z" << endl;
+//            rotation += 1.5708;
+//        }
         //cout << rotation << endl;
         //Model->translate(vec3(1.15945 ,-1.17137 ,1.34475));
 
@@ -727,7 +709,7 @@ public:
             newDog.modelRadius = 2;
             newDog.isCollected = false;
             newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
-            //newDog.orientation = vec3(0,0,1);
+            //newDog.orientation = glm::normalize(vec3(1,0,-1));
             dogs.push_back(newDog);
         }
     }
@@ -760,13 +742,14 @@ public:
         float gridLengthMax = gridLength/2;
         
         // check collisions against all the walls
+        
         if (dogIndex != -1) {
+            
             if (dogs[dogIndex].position.x >= gridWidthMax - radius || dogs[dogIndex].position.x <= gridWidthMin + radius) {
                 dogs[dogIndex].orientation.x *= -1;
             }
             if (dogs[dogIndex].position.z >= gridLengthMax - radius || dogs[dogIndex].position.z <= gridLengthMin + radius) {
                 dogs[dogIndex].orientation.z *= -1;
-                
             }
         }
     }
@@ -776,8 +759,6 @@ public:
         dogs[dogIndex].speed = 0;
         dogsCollected += 1;
         cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
-
-        
     }
     
 	void render()
@@ -790,7 +771,7 @@ public:
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
-        mat4 look = glm::lookAt(eye, lookAtPoint, upVector);
+        mat4 look = glm::lookAt(player.eye, player.lookAtPoint, player.upVector);
 
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -800,7 +781,7 @@ public:
         auto Model = make_shared<MatrixStack>();
         auto View = make_shared<MatrixStack>();
 
-        checkForCollisions(-1, 2, eye);
+        checkForCollisions(-1, 2, player.eye);
 		// Create the matrix stacks
 		auto P = make_shared<MatrixStack>();
 		auto MV = make_shared<MatrixStack>();
@@ -827,25 +808,39 @@ public:
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
-       if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
-           glfwSetTime(0.0);
-           generateDogs(1);
-       }
+        if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
+            glfwSetTime(0.0);
+            generateDogs(1);
+        }
         
         for(int i = 0; i < dogs.size(); i+=1){
             drawMovableDog(Model, &(dogs[i]));
         }
         
-        SetMaterial(2);
+       
+        
+    
+//        prog3->bind();
+//        texture0->bind(prog3->getUniform("Texture0"));
+//        CHECKED_GL_CALL(glUniformMatrix4fv(prog3->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
+//        CHECKED_GL_CALL(glUniformMatrix4fv(prog3->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
+//        glUniform3f(prog3->getUniform("lightPos"), 0, 10, 0);
+        
+        SetMaterial(4);
         Model->pushMatrix();
         Model->translate(vec3(0, -1.5, 0));
         Model->scale(vec3(gridWidth, .5, gridLength));
-        setModel(prog2, Model);
-        allShapes[1]->draw(prog2);
-        Model->popMatrix();
+        setModel(prog3, Model);
         
-       
+        allShapes[1]->draw(prog2);
+      
+        Model->popMatrix();
+      
+//        prog3->unbind();
         prog2->unbind();
+        
+        
+        
 		// Draw
 		prog->bind();
 		updateParticles();
@@ -878,7 +873,6 @@ public:
 		// Pop matrix stacks.
 		MV->popMatrix();
         dummyTheta -= .03;
-        //dogTheta += .005;
         updateDogs();
         if (move == true) {
             //animation update example
@@ -977,7 +971,7 @@ int main(int argc, char **argv)
 
 	// Your main will always include a similar set up to establish your window
 	// and GL context, etc.
-    Player p = Player();
+
 	WindowManager *windowManager = new WindowManager();
 	windowManager->init(512, 512);
 	windowManager->setEventCallbacks(application);

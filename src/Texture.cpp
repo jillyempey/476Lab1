@@ -10,6 +10,17 @@
 
 using namespace std;
 
+Texture::Texture() :
+    filename(""),
+    tid(0)
+{
+    
+}
+
+Texture::~Texture()
+{
+    
+}
 
 void Texture::init()
 {
