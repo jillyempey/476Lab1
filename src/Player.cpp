@@ -6,10 +6,10 @@
 #include "Texture.h"
 
 Player::Player(){
-    phi = -.3;
+    phi = 0;//-.3;
     theta = -1.58;
-    eye = glm::vec3(0, 15, 0);
-    lookAtPoint = glm::vec3(0, 0, 1);
+    eye = glm::vec3(0, 1.5, 0);
+    lookAtPoint = glm::vec3(0, 1.5, 1);
     upVector = glm::vec3(0, 1, 0);
     
     speed = 2;
@@ -22,6 +22,7 @@ Player::Player(){
 void Player::moveForward() {
     eye -= speed * w;
     lookAtPoint -= speed * w;
+    lookAtPoint.y = 1.5;
     gaze = lookAtPoint - eye;
     return;
 }
@@ -29,6 +30,7 @@ void Player::moveForward() {
 void Player::moveBackwards(){
     eye += speed * w;
     lookAtPoint += speed * w;
+    lookAtPoint.y = 1.5;
     gaze = lookAtPoint - eye;
     return;
 }
@@ -36,6 +38,7 @@ void Player::moveBackwards(){
 void Player::moveLeft() {
     eye -= speed * u;
     lookAtPoint -= speed * u;
+    lookAtPoint.y = 1.5;
     gaze = lookAtPoint - eye;
     return;
 }
@@ -43,6 +46,7 @@ void Player::moveLeft() {
 void Player::moveRight() {
     eye += speed * u;
     lookAtPoint += speed * u;
+    lookAtPoint.y = 1.5;
     gaze = lookAtPoint - eye;
     return;
 }

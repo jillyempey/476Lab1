@@ -201,7 +201,7 @@ public:
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
 	{
-        player.phi += .05*deltaY;
+        player.phi = 0;// += .05*deltaY;
         player.theta -= .05*deltaX;
         
         if (player.phi > 1.39626) {
@@ -574,6 +574,7 @@ public:
         //cout << dog->offset << endl;
         float dogx = dog->position.x;
         float dogz = dog->position.z;
+        float theta = dog->isCollected ? 0 : sTheta;
         // player.eye.x = dogX;
         // player.eye.z = dogZ + 14;
         for(int j = 0; j < trees.size(); j++){
@@ -621,7 +622,7 @@ public:
         //Model->pushMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, -1.5));
-        Model->rotate(-.7*sTheta, vec3(1, 0, 0));
+        Model->rotate(-.7*theta, vec3(1, 0, 0));
         Model->translate(vec3(0, 1.1, 1.5));
         Model->pushMatrix();
         setModel(prog2, Model);
@@ -634,7 +635,7 @@ public:
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, 1.5));
-        Model->rotate(.7*sTheta, vec3(1, 0, 0));
+        Model->rotate(.7*theta, vec3(1, 0, 0));
         Model->translate(vec3(0, 1.1, -1.5));
         Model->pushMatrix();
         setModel(prog2, Model);
@@ -647,7 +648,7 @@ public:
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, -1.5));
-        Model->rotate(.7*sTheta, vec3(1, 0, 0));
+        Model->rotate(.7*theta, vec3(1, 0, 0));
         Model->translate(vec3(0, 1.1, +1.5));
         Model->pushMatrix();
         setModel(prog2, Model);
@@ -660,7 +661,7 @@ public:
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, 1.5));
-        Model->rotate(-.7*sTheta, vec3(1, 0, 0));
+        Model->rotate(-.7*theta, vec3(1, 0, 0));
         Model->translate(vec3(0, 1.1, -1.5));
         Model->pushMatrix();
         setModel(prog2, Model);
@@ -715,8 +716,11 @@ public:
     }
     void updateDogs(){
         for(int i = 0; i < dogs.size(); i++){
-            checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);
-            dogs[i].move();
+            if(!dogs[i].isCollected)
+            {
+                checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);
+                dogs[i].move();
+            }
         }
     }
     
