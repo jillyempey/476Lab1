@@ -48,6 +48,12 @@ void Player::moveBackwards(){
     return;
 }
 
+void Player::updateLocalOrientation(){
+    w = -(glm::normalize(gaze));
+    u = glm::normalize(glm::cross(upVector, w));
+    v = glm::normalize(glm::cross(w, u));
+}
+
 void Player::moveLeft() {
     eye -= speed * u;
     lookAtPoint -= speed * u;

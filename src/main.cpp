@@ -90,10 +90,6 @@ public:
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
 		keyToggles[key] = ! keyToggles[key];
-
-        player.w = -(glm::normalize(player.gaze));
-        player.u = glm::normalize(glm::cross(player.upVector, player.w));
-        player.v = glm::normalize(glm::cross(player.w, player.u));
         
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
@@ -110,12 +106,6 @@ public:
         }
         if (key == GLFW_KEY_W && action == GLFW_PRESS) {
             player.moveForward();
-        }
-        if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
-            moveLight -= 1;
-        }
-        if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-            moveLight += 1;
         }
         
         if (key == GLFW_KEY_Z && action == GLFW_PRESS) {
@@ -249,9 +239,6 @@ public:
 				gMax.x = glm::max(mesh->max.x, gMax.x);
 				gMax.y = glm::max(mesh->max.y, gMax.y);
 				gMax.z = glm::max(mesh->max.z, gMax.z);
-
-                
-
 				meshes.push_back(mesh);
 
 			}
@@ -350,7 +337,6 @@ int main(int argc, char **argv)
 	vec3 planeMid;
 	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle);
     application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid);
-    //application->gameModel.plane.prog = application->bf_prog;
     application->gameModel.plane.allShapes = application->allShapesPlane;
 
     application->gameModel.dogMiddle = application->dogMiddle;

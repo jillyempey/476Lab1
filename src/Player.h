@@ -37,6 +37,7 @@ class Player {
         void moveLeft();
         void moveRight();
         void scrollCallback(double deltaX, double deltaY);
+        void updateLocalOrientation();
     
     private:
         
