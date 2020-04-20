@@ -36,8 +36,8 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program
-    std::shared_ptr<Program> prog2;
-    std::shared_ptr<Program> prog3;
+    std::shared_ptr<Program> bf_prog;
+    std::shared_ptr<Program> tex_prog;
 
     Player player = Player();
     GameModel gameModel = GameModel();
@@ -132,18 +132,7 @@ public:
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
 	{
-        player.phi = 0;// += .05*deltaY;
-        player.theta -= .05*deltaX;
-        
-        if (player.phi > 1.39626) {
-            player.phi = 1.39626;
-        } else if (player.phi < -1.39626) {
-            player.phi = -1.39626;
-        }
-        
-        player.lookAtPoint.x = cos(player.phi)*cos(player.theta) + player.eye.x;
-        player.lookAtPoint.y = sin(player.phi) + player.eye.y;
-        player.lookAtPoint.z = cos(player.phi) * cos(1.57079632679 - player.theta) + player.eye.z;
+        player.scrollCallback(deltaX, deltaY);
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -182,39 +171,39 @@ public:
 		CHECKED_GL_CALL(glPointSize(14.0f));
         
         // Initialize the GLSL program for lighting.
-        prog2 = make_shared<Program>();
-        prog2->setVerbose(true);
-        prog2->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/simple_frag.glsl");
-        if (! prog2->init())
+        bf_prog = make_shared<Program>();
+        bf_prog->setVerbose(true);
+        bf_prog->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/simple_frag.glsl");
+        if (! bf_prog->init())
         {
             std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
             exit(1);
         }
-        prog2->addUniform("P");
-        prog2->addUniform("V");
-        prog2->addUniform("M");
-        prog2->addUniform("lightPos");
-        prog2->addUniform("MatAmb");
-        prog2->addUniform("MatDif");
-        prog2->addUniform("MatSpec");
-        prog2->addUniform("shine");
-        prog2->addAttribute("vertPos");
-        prog2->addAttribute("vertNor");
-        prog2->addAttribute("vertTex");
+        bf_prog->addUniform("P");
+        bf_prog->addUniform("V");
+        bf_prog->addUniform("M");
+        bf_prog->addUniform("lightPos");
+        bf_prog->addUniform("MatAmb");
+        bf_prog->addUniform("MatDif");
+        bf_prog->addUniform("MatSpec");
+        bf_prog->addUniform("shine");
+        bf_prog->addAttribute("vertPos");
+        bf_prog->addAttribute("vertNor");
+        bf_prog->addAttribute("vertTex");
         
         // Initialize the GLSL program for texture.
-        prog3 = make_shared<Program>();
-        prog3->setVerbose(true);
-        prog3->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
-        prog3->init();
-        prog3->addUniform("P");
-        prog3->addUniform("V");
-        prog3->addUniform("M");
-        prog3->addUniform("lightPos");
-        prog3->addUniform("Texture0");
-        prog3->addAttribute("vertPos");
-        prog3->addAttribute("vertNor");
-        prog3->addAttribute("vertTex");
+        tex_prog = make_shared<Program>();
+        tex_prog->setVerbose(true);
+        tex_prog->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
+        tex_prog->init();
+        tex_prog->addUniform("P");
+        tex_prog->addUniform("V");
+        tex_prog->addUniform("M");
+        tex_prog->addUniform("lightPos");
+        tex_prog->addUniform("Texture0");
+        tex_prog->addAttribute("vertPos");
+        tex_prog->addAttribute("vertNor");
+        tex_prog->addAttribute("vertTex");
 	}
 
 	// Code to load in the three textures
@@ -305,17 +294,17 @@ public:
         
 		// camera rotate
 		MV->rotate(camRot, vec3(0, 1, 0));
-        prog2->bind();
-        CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-        CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
-        glUniform3f(prog2->getUniform("lightPos"), 0, 10, 0);
+        bf_prog->bind();
+        CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
+        CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
+        glUniform3f(bf_prog->getUniform("lightPos"), 0, 10, 0);
                 
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
         if (curTime > gameModel.dogSpawnIntervalLow && (gameModel.dogs.size() + 1) <= gameModel.maxNumDogs) {
             glfwSetTime(0.0);
-            gameModel.generateDogs(1, prog2, allShapesDog);
+            gameModel.generateDogs(1, bf_prog, allShapesDog);
         }
         
         for(int i = 0; i < gameModel.dogs.size(); i+=1){
@@ -323,7 +312,7 @@ public:
         }
 
         gameModel.plane.draw(Model);
-        prog2->unbind();
+        bf_prog->unbind();
         
         gameModel.updateDogs();
         
@@ -361,13 +350,11 @@ int main(int argc, char **argv)
 	vec3 planeMid;
 	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle);
     application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid);
-    application->gameModel.plane.prog = application->prog2;
+    application->gameModel.plane.prog = application->bf_prog;
     application->gameModel.plane.allShapes = application->allShapesPlane;
 
-
-    cout << application->dogMiddle.x << " " << application->dogMiddle.y << " " << application->dogMiddle.z << " " << endl;
     application->gameModel.dogMiddle = application->dogMiddle;
-    application->gameModel.generateDogs(1, application->prog2, application->allShapesDog);
+    application->gameModel.generateDogs(1, application->bf_prog, application->allShapesDog);
     
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 

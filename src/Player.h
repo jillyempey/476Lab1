@@ -36,6 +36,7 @@ class Player {
         void moveBackwards();
         void moveLeft();
         void moveRight();
+        void scrollCallback(double deltaX, double deltaY);
     
     private:
         

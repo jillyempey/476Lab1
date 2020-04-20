@@ -26,7 +26,20 @@ void Player::moveForward() {
     gaze = lookAtPoint - eye;
     return;
 }
-
+void Player::scrollCallback(double deltaX, double deltaY){
+    phi = 0;// += .05*deltaY;
+    theta -= .05*deltaX;
+    
+    if (phi > 1.39626) {
+        phi = 1.39626;
+    } else if (phi < -1.39626) {
+        phi = -1.39626;
+    }
+    
+    lookAtPoint.x = cos(phi)*cos(theta) + eye.x;
+    lookAtPoint.y = sin(phi) + eye.y;
+    lookAtPoint.z = cos(phi) * cos(1.57079632679 - theta) + eye.z;
+}
 void Player::moveBackwards(){
     eye += speed * w;
     lookAtPoint += speed * w;
