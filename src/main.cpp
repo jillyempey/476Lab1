@@ -61,8 +61,9 @@ public:
     float speed = 2;
     
     shared_ptr<Shape> mesh;
-    vector<shared_ptr<Shape>> allShapes;
-    
+    vector<shared_ptr<Shape>> allShapesDog;
+    vector<shared_ptr<Shape>> allShapesPlane;
+
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -84,7 +85,6 @@ public:
 	float camRot;
     
     float moveLight = 0;
-    float sTheta = 0;
 
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -227,163 +227,51 @@ public:
         texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 	}
 
-	void initGeom(const std::string& resourceDirectory)
+	void initGeom(const std::string& resourceDirectory, vector<shared_ptr<Shape>> &meshes, vec3 &meshMiddle)
 	{
-        vector<tinyobj::shape_t> TOshapes;
-        vector<tinyobj::material_t> objMaterials;
-        string errStr;
-        //load in the mesh and make the shape(s)
+		// Initialize mesh
+		// Load geometry
+ 		// Some obj files contain material information.We'll ignore them for this assignment.
+		vector<tinyobj::shape_t> TOshapes;
+		vector<tinyobj::material_t> objMaterials;
+		string errStr;
+        vec3 gMax = vec3(float(INT32_MIN), float(INT32_MIN), float(INT32_MIN));
+        vec3 gMin = vec3(float(INT32_MAX), float(INT32_MAX), float(INT32_MAX));
 
-        bool rc2 = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cube.obj").c_str());
-        
-        if (!rc2) {
-            cerr << errStr << endl;
-        } else {
-            // get length of shapes
-            int length = TOshapes.size();
-            
-            for(int i = 0; i < length; i++) {
-                mesh = make_shared<Shape>();
-                mesh->createShape(TOshapes[i]);
-                mesh->measure();
-                mesh->init();
-                allShapes.push_back(mesh);
-            }
-        }
-        
-        bool rc3 = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/katiedog.obj").c_str());
-        
-        if (!rc3) {
-            cerr << errStr << endl;
-        } else {
-            // get length of shapes
-            int length = TOshapes.size();
-            
-            for(int i = 0; i < length; i++) {
-                mesh = make_shared<Shape>();
-                mesh->createShape(TOshapes[i]);
-                mesh->measure();
-                mesh->init();
-                dogMin = mesh->min;
-                dogMax = mesh->max;
-                dogMiddle = vec3((dogMin.x + dogMax.x)/2 , (dogMin.y + dogMax.y)/2, (dogMin.z + dogMax.z)/2);
-                allShapes.push_back(mesh);
-            }
-            
-        }
-        
-		// generate the VAO
-		CHECKED_GL_CALL(glGenVertexArrays(1, &VertexArrayID));
-		CHECKED_GL_CALL(glBindVertexArray(VertexArrayID));
+		printf("drawing: %s\n", resourceDirectory.c_str());
+		//load in the mesh and make the shape(s)
+		bool rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory).c_str());
+		if (!rc) {
+			cerr << errStr << endl;
+		}
+		else {
+			cout << "number of shapes: " << int(TOshapes.size()) << endl;
+			for (int i = 0; i < int(TOshapes.size()); i++) {
+				mesh = make_shared<Shape>();
 
-		// generate vertex buffer to hand off to OGL - using instancing
-		CHECKED_GL_CALL(glGenBuffers(1, &pointsbuffer));
-		// set the current state to focus on our vertex buffer
-		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
-		// actually memcopy the data - only do this once
-		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW));
+				mesh->createShape(TOshapes[i]);
+				mesh->measure();
+				mesh->init();
 
-		CHECKED_GL_CALL(glGenBuffers(1, &colorbuffer));
-		// set the current state to focus on our vertex buffer
-		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
-		// actually memcopy the data - only do this once
-		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW));
-       
+				gMin.x = glm::min(mesh->min.x, gMin.x);
+				gMin.y = glm::min(mesh->min.y, gMin.y);
+				gMin.z = glm::min(mesh->min.z, gMin.z);
+
+				gMax.x = glm::max(mesh->max.x, gMax.x);
+				gMax.y = glm::max(mesh->max.y, gMax.y);
+				gMax.z = glm::max(mesh->max.z, gMax.z);
+
+                
+
+				meshes.push_back(mesh);
+
+			}
+            meshMiddle.x = (gMin.x + gMax.x)/2;
+            meshMiddle.y = (gMin.y + gMax.y)/2;
+            meshMiddle.z = (gMin.z + gMax.z)/2;
+
+		}
 	}
-   
-    float get_rotation(vec3 a, vec3 b){
-        float dotProd = dot(a, b);
-        float magnitudeA = length(a);
-        float magnitudeB = length(b);
-        return acos(dotProd / (magnitudeA * magnitudeB));
-    }
-    
-    void drawMovableDog(std::shared_ptr<MatrixStack> Model, Dog *dog) {
-
-        float dogx = dog->position.x;
-        float dogz = dog->position.z;
-        float theta = dog->isCollected ? 0 : sTheta;
-        
-        SetMaterial(10);
-        Model->pushMatrix();
-
-        Model->translate(vec3(dogx, 0, dogz));
-        
-        float rotation = get_rotation(vec3(0, 0, 1), dog->orientation) ;
-
-        if(dog->orientation.x < 0){
-            rotation *= -1;
-        }
-
-        Model->rotate(rotation, vec3(0, 1, 0));
-        Model->scale(vec3(.5, .5, .5));
-        Model->translate(-dogMiddle);
-        setModel(prog2, Model);
-        // head
-        allShapes[1]->draw(prog2);
-        //Model->pushMatrix();
-        Model->pushMatrix();
-        Model->translate(vec3(0, -.9, -1.5));
-        Model->rotate(-.7*theta, vec3(1, 0, 0));
-        Model->translate(vec3(0, 1.1, 1.5));
-        Model->pushMatrix();
-        setModel(prog2, Model);
-        // back right leg bottom
-        allShapes[3]->draw(prog2);
-        Model->popMatrix();
-        setModel(prog2, Model);
-        //back right leg top
-        allShapes[2]->draw(prog2);
-        Model->popMatrix();
-        Model->pushMatrix();
-        Model->translate(vec3(0, -.9, 1.5));
-        Model->rotate(.7*theta, vec3(1, 0, 0));
-        Model->translate(vec3(0, 1.1, -1.5));
-        Model->pushMatrix();
-        setModel(prog2, Model);
-        // front left leg bottom
-        allShapes[5]->draw(prog2);
-        Model->popMatrix();
-        setModel(prog2, Model);
-        // front left leg top
-        allShapes[6]->draw(prog2);
-        Model->popMatrix();
-        Model->pushMatrix();
-        Model->translate(vec3(0, -.9, -1.5));
-        Model->rotate(.7*theta, vec3(1, 0, 0));
-        Model->translate(vec3(0, 1.1, +1.5));
-        Model->pushMatrix();
-        setModel(prog2, Model);
-        // back left leg bottom
-        allShapes[7]->draw(prog2);
-        Model->popMatrix();
-        setModel(prog2, Model);
-        // back left leg top
-        allShapes[8]->draw(prog2);
-        Model->popMatrix();
-        Model->pushMatrix();
-        Model->translate(vec3(0, -.9, 1.5));
-        Model->rotate(-.7*theta, vec3(1, 0, 0));
-        Model->translate(vec3(0, 1.1, -1.5));
-        Model->pushMatrix();
-        setModel(prog2, Model);
-        // front right leg bottom
-        allShapes[9]->draw(prog2);
-        Model->popMatrix();
-        setModel(prog2, Model);
-        // front right leg top
-        allShapes[10]->draw(prog2);
-        Model->popMatrix();
-        setModel(prog2, Model);
-        // bottom
-        allShapes[4]->draw(prog2);
-        Model->popMatrix();
-    }
-
-    void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack>M) {
-        glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
-    }
-
 	void render()
 	{
 		// Get current frame buffer size.
@@ -421,112 +309,28 @@ public:
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
         glUniform3f(prog2->getUniform("lightPos"), 0, 10, 0);
-        
-        SetMaterial(0);
-        
+                
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
         if (curTime > gameModel.dogSpawnIntervalLow && (gameModel.dogs.size() + 1) <= gameModel.maxNumDogs) {
             glfwSetTime(0.0);
-            gameModel.generateDogs(1);
+            gameModel.generateDogs(1, prog2, allShapesDog);
         }
         
         for(int i = 0; i < gameModel.dogs.size(); i+=1){
-            drawMovableDog(Model, &(gameModel.dogs[i]));
+            gameModel.dogs[i].draw(Model);
         }
-        
-        SetMaterial(4);
-        Model->pushMatrix();
-        Model->translate(vec3(0, -.75, 0));
-        Model->scale(vec3(gameModel.gridWidth, .5, gameModel.gridLength));
-        setModel(prog3, Model);
-        
-        allShapes[0]->draw(prog2);
-      
-        Model->popMatrix();
-      
+
+        gameModel.plane.draw(Model);
         prog2->unbind();
         
         gameModel.updateDogs();
-        sTheta = sin(glfwGetTime());
+        
 		P->popMatrix();
 
 	}
-    void SetMaterial(int i) {
-        switch (i) {
-            case 0: //shiny blue plastic
-                glUniform3f(prog2->getUniform("MatAmb"), 0.02, 0.04, 0.2);
-                glUniform3f(prog2->getUniform("MatDif"), 0.0, 0.16, 0.9); glUniform3f(prog2->getUniform("MatSpec"), 0.14, 0.2, 0.8); glUniform1f(prog2->getUniform("shine"), 120.0);
-                break;
-            case 1: // flat grey
-                glUniform3f(prog2->getUniform("MatAmb"), 0.13, 0.13, 0.14);
-                glUniform3f(prog2->getUniform("MatDif"), 0.3, 0.3, 0.4);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.3, 0.3, 0.4);
-                glUniform1f(prog2->getUniform("shine"), 4.0);
-                break;
-            case 2: //hot pink1
-                glUniform3f(prog2->getUniform("MatAmb"), 1, 0.714, 0.757);
-                glUniform3f(prog2->getUniform("MatDif"), 1, 0.714, 0.757);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.9922, 0.941176, 0.80784);
-                glUniform1f(prog2->getUniform("shine"), 27.9);
-                break;
-            case 3: // green / emerald - my unique material
-                glUniform3f(prog2->getUniform("MatAmb"), 0.0215, 0.1745, 0.0215);
-                glUniform3f(prog2->getUniform("MatDif"), 0.03568, 0.41424, 0.03568);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.633, 0.727811, 0.633);
-                glUniform1f(prog2->getUniform("shine"), 0.6);
-                break;
-            case 4: //hot pink1
-                glUniform3f(prog2->getUniform("MatAmb"), 1, 0.07843, 0.576);
-                glUniform3f(prog2->getUniform("MatDif"), 1, 0.07843, 0.576);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.9922, 0.941176, 0.80784);
-                glUniform1f(prog2->getUniform("shine"), 27.9);
-                break;
-            case 5: // hot pink2
-                glUniform3f(prog2->getUniform("MatAmb"), 0.35, 0.0725, 0.2725);
-                glUniform3f(prog2->getUniform("MatDif"), 1.0, .78, .682);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.3, 0.1, 0.5);
-                glUniform1f(prog2->getUniform("shine"), .078125);
-                break;
-            case 6: // neon green
-                glUniform3f(prog2->getUniform("MatAmb"), 0.2, 0.40725, 0.10725);
-                glUniform3f(prog2->getUniform("MatDif"), 0.78, 1.0, .396);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.4, 0.7, 0.4);
-                glUniform1f(prog2->getUniform("shine"), .078125);
-                break;
-            case 7: //black rubber
-                glUniform3f(prog2->getUniform("MatAmb"), 0.02, 0.02, 0.02);
-                glUniform3f(prog2->getUniform("MatDif"), 0.01, 0.01, 0.01);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.4, 0.4, 0.4);
-                glUniform1f(prog2->getUniform("shine"), .078125);
-                break;
-            case 8: //jade
-                glUniform3f(prog2->getUniform("MatAmb"), 0.135, 0.2225, 0.1575);
-                glUniform3f(prog2->getUniform("MatDif"), .54, .89, 0.63);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.316228, 0.316228, 0.316228);
-                glUniform1f(prog2->getUniform("shine"), 0.1);
-                break;
-            case 9: //bronze
-                glUniform3f(prog2->getUniform("MatAmb"), 0.25, 0.148, 0.06475);
-                glUniform3f(prog2->getUniform("MatDif"), .4, .2368, 0.1036);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.774597, 0.458561, 0.200621);
-                glUniform1f(prog2->getUniform("shine"), 76.8);
-                break;
-            case 10: //pearl
-                glUniform3f(prog2->getUniform("MatAmb"), 0.25, 0.20725, 0.20725);
-                glUniform3f(prog2->getUniform("MatDif"), 1.0, .829, 0.829);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.296648, 0.296648, 0.296648);
-                glUniform1f(prog2->getUniform("shine"), 11.264);
-                break;
-            case 11: //ruby
-                glUniform3f(prog2->getUniform("MatAmb"), 0.1745, 0.01175, 0.01175);
-                glUniform3f(prog2->getUniform("MatDif"), .61424, .04136, 0.04136);
-                glUniform3f(prog2->getUniform("MatSpec"), 0.727811, 0.626959, 0.626959);
-                glUniform1f(prog2->getUniform("shine"), 76.8);
-                break;
-        }
-    }
+    
 };
 
 int main(int argc, char **argv)
@@ -554,11 +358,16 @@ int main(int argc, char **argv)
 
 	application->init(resourceDir);
 	application->initTex(resourceDir);
-	
-	application->initGeom(resourceDir);
-    cout << application->dogMiddle.x << " " << application->dogMiddle.y << " " << application->dogMiddle.z << " " << endl;
+	vec3 planeMid;
+	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle);
+    application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid);
+    application->gameModel.plane.prog = application->prog2;
+    application->gameModel.plane.allShapes = application->allShapesPlane;
 
-    application->gameModel.generateDogs(1);
+
+    cout << application->dogMiddle.x << " " << application->dogMiddle.y << " " << application->dogMiddle.z << " " << endl;
+    application->gameModel.dogMiddle = application->dogMiddle;
+    application->gameModel.generateDogs(1, application->prog2, application->allShapesDog);
     
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 

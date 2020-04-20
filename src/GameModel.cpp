@@ -8,7 +8,6 @@
 
 GameModel::GameModel(){
     vector<Dog> dogs;
-    
     dogSpawnIntervalLow = 7.0;
     maxNumDogs = 4;
     dogsCollected = 0;
@@ -20,7 +19,10 @@ GameModel::GameModel(){
     gridWidthMax = gridWidth/2;
     gridLengthMin = -gridLength/2;
     gridLengthMax = gridLength/2;
-    
+    plane.gridLength = gridLength;
+    plane.gridWidth = gridWidth;
+    plane.allShapes = allShapesPlane;
+    plane.prog = bf_prog;
 }
 
 void GameModel::checkForCollisions(int dogIndex, float radius, vec3 position) {
@@ -58,9 +60,12 @@ void GameModel::collectDog(int dogIndex){
     dogs[dogIndex].speed = 0;
     dogsCollected += 1;
     cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
+    if(dogsCollected == maxNumDogs){
+        cout << "Congats, you collected all the dogs!" << endl;
+    }
 }
 
-void GameModel::generateDogs(int numDogs){
+void GameModel::generateDogs(int numDogs, shared_ptr<Program> prog, vector<shared_ptr<Shape>> allShapes){
     for(int i = 0; i < numDogs; i++){
         Dog newDog;
         newDog.theta = 0;
@@ -71,6 +76,9 @@ void GameModel::generateDogs(int numDogs){
         newDog.pathRadius = randFloat(5, 10);
         newDog.modelRadius = 2;
         newDog.isCollected = false;
+        newDog.prog = prog;
+        newDog.dogMiddle = dogMiddle;
+        newDog.allShapes = allShapes;
         newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
         dogs.push_back(newDog);
     }
