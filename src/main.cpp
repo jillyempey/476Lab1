@@ -18,6 +18,7 @@
 #include "WindowManager.h"
 #include "Dog.h"
 #include "Player.h"
+#include "GameModel.h"
 
  // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
@@ -30,44 +31,16 @@ class Application : public EventCallbacks
 {
 
 public:
-    float randFloat(float l, float h)
-    {
-        float r = rand() / (float) RAND_MAX;
-        return (1.0f - r) * l + r * h;
-    }
-    
-    struct TreeStruct {
-        float x;
-        float y = 15;
-        float z;
-        float thetaOffset;
-        int material;
-        bool rain = false;
-    } t1, dummy1;
-    
+
+
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program
-	std::shared_ptr<Program> prog;
     std::shared_ptr<Program> prog2;
     std::shared_ptr<Program> prog3;
-    vector<Dog> dogs;
-    vector<shared_ptr<Shape>> dummy;
-    float dummyTheta = 0;
-    
-    float gridWidth = 50;
-    float gridLength = 50;
-    
-    double dogSpawnIntervalLow = 7.0;
-    
-    int maxNumDogs = 4;
-    
-    int dogsCollected = 0;
-    
-    vector<std::vector<std::shared_ptr<Particle>>> allParticles;
-    std::vector<std::shared_ptr<Particle>> particles;
-	
+
     Player player = Player();
+    GameModel gameModel = GameModel();
 
 	// CPU array for particles - redundant with particle structure
 	// but simple
@@ -78,14 +51,10 @@ public:
 	GLuint pointsbuffer;
 	GLuint colorbuffer;
     
-    bool isRaining = false;
-    
 
     vec3 dogMin;
     vec3 dogMax;
     vec3 dogMiddle;
-    
-    bool move = true;
     
     bool beginning = true;
     
@@ -94,14 +63,11 @@ public:
     shared_ptr<Shape> mesh;
     vector<shared_ptr<Shape>> allShapes;
     
-    vector<TreeStruct> trees;
-    vector<TreeStruct> dummies;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
 	// OpenGL handle to texture data
-	shared_ptr<Texture> texture;
     shared_ptr<Texture> texture0;
 
 	int gMat = 0;
@@ -145,15 +111,6 @@ public:
         if (key == GLFW_KEY_W && action == GLFW_PRESS) {
             player.moveForward();
         }
-        if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-            
-            if(move == false) {
-                move = true;
-                sTheta = 0;
-            } else {
-                move = false;
-            }
-        }
         if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
             moveLight -= 1;
         }
@@ -167,35 +124,9 @@ public:
         if (key == GLFW_KEY_Z && action == GLFW_RELEASE) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         }
-		if (key == GLFW_KEY_K && action == GLFW_PRESS)
-		{
-			//camRot -= 0.314f;
-		}
-		if (key == GLFW_KEY_L && action == GLFW_PRESS)
-		{
-			camRot += 0.314f;
-		}
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
 		{
 			speed += 1;
-		}
-
-        // dog orientation debug:
-        if (key == GLFW_KEY_I && action == GLFW_PRESS)
-		{
-			dogs[0].orientation = vec3(0, 0, 1);
-		}
-        if (key == GLFW_KEY_K && action == GLFW_PRESS)
-		{
-			dogs[0].orientation = vec3(1, 0, 0);
-		}
-        if (key == GLFW_KEY_M && action == GLFW_PRESS)
-		{
-			dogs[0].orientation = vec3(0, 0, -1);
-		}
-        if (key == GLFW_KEY_J && action == GLFW_PRESS)
-		{
-			dogs[0].orientation = vec3(-1, 0, 0);
 		}
 	}
 
@@ -222,7 +153,6 @@ public:
 		if (action == GLFW_PRESS)
 		{
 			glfwGetCursorPos(window, &posX, &posY);
-			//cout << "Pos X " << posX << " Pos Y " << posY << endl;
 		}
 	}
 
@@ -250,22 +180,6 @@ public:
 		CHECKED_GL_CALL(glEnable(GL_BLEND));
 		CHECKED_GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 		CHECKED_GL_CALL(glPointSize(14.0f));
-
-		// Initialize the GLSL program.
-		prog = make_shared<Program>();
-		prog->setVerbose(true);
-		prog->setShaderNames(
-			resourceDirectory + "/lab10_vert.glsl",
-			resourceDirectory + "/lab10_frag.glsl");
-		if (! prog->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		prog->addUniform("P");
-		prog->addUniform("MV");
-		prog->addUniform("alphaTexture");
-		prog->addAttribute("vertPos");
         
         // Initialize the GLSL program for lighting.
         prog2 = make_shared<Program>();
@@ -306,30 +220,11 @@ public:
 	// Code to load in the three textures
 	void initTex(const std::string& resourceDirectory)
 	{
-		texture = make_shared<Texture>();
-		texture->setFilename(resourceDirectory + "/dollarbills.jpg");
-		texture->init();
-		texture->setUnit(0);
-		texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         texture0 = make_shared<Texture>();
         texture0->setFilename(resourceDirectory + "/grass.jpg");
         texture0->init();
         texture0->setUnit(2);
         texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-	}
-
-	void initParticles()
-	{
-        int n = numP;
-        
-        for (int i = 0; i < n; ++ i)
-        {
-            auto particle = make_shared<Particle>();
-            particles.push_back(particle);
-            for (int i = 0; i < trees.size(); i++) {
-                particle->load(trees[i].x, trees[i].y, trees[i].z);
-            }
-        }
 	}
 
 	void initGeom(const std::string& resourceDirectory)
@@ -338,24 +233,7 @@ public:
         vector<tinyobj::material_t> objMaterials;
         string errStr;
         //load in the mesh and make the shape(s)
-        
-        bool rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/sphere.obj").c_str());
-        
-        if (!rc) {
-            cerr << errStr << endl;
-        } else {
-            // get length of shapes
-            int length = TOshapes.size();
-            
-            for(int i = 0; i < length; i++) {
-                mesh = make_shared<Shape>();
-                mesh->createShape(TOshapes[i]);
-                mesh->measure();
-                mesh->init();
-                allShapes.push_back(mesh);
-            }
-        }
-        
+
         bool rc2 = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/cube.obj").c_str());
         
         if (!rc2) {
@@ -394,24 +272,6 @@ public:
             
         }
         
-        bool rc4 = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (resourceDirectory + "/dummy.obj").c_str());
-        
-        if (!rc4) {
-            cerr << errStr << endl;
-        } else {
-            // get length of shapes
-            int length = TOshapes.size();
-            
-            for(int i = 0; i < length; i++) {
-                mesh = make_shared<Shape>();
-                mesh->createShape(TOshapes[i]);
-                mesh->measure();
-                mesh->init();
-                allShapes.push_back(mesh);
-            }
-        }
-        
-        
 		// generate the VAO
 		CHECKED_GL_CALL(glGenVertexArrays(1, &VertexArrayID));
 		CHECKED_GL_CALL(glBindVertexArray(VertexArrayID));
@@ -428,197 +288,39 @@ public:
 		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
 		// actually memcopy the data - only do this once
 		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW));
-        t1.x = 9.71789;
-        t1.z = -2.35851;
-        t1.thetaOffset = .1;
-        t1.material = 4;
-        trees.push_back(t1);
-        for (int i = 0; i < 10; i++) {
-            t1.x = randFloat(-20., 20.);
-            t1.z = randFloat(-20., 20.);
-            t1.thetaOffset = randFloat(-.2, .20);
-            t1.material = (int)randFloat(5.0, 6.999);
-            trees.push_back(t1);
-            
-            dummy1.x = randFloat(-20., 20.);
-            dummy1.y = randFloat(.1, 30.);
-            dummy1.z = randFloat(-20., 20.);
-            dummy1.material = (int)randFloat(1.0, 11.999);
-            dummies.push_back(dummy1);
-        }
+       
 	}
-
-	// Note you could add scale later for each particle - not implemented
-	void updateGeom()
-	{
-		glm::vec3 pos;
-		glm::vec4 col;
-
-		// go through all the particles and update the CPU buffer
-        for (int i = 0; i < numP; i++)
-		{
-			pos = particles[i]->getPosition();
-			col = particles[i]->getColor();
-			points[i * 3 + 0] = pos.x;
-			points[i * 3 + 1] = pos.y;
-			points[i * 3 + 2] = pos.z;
-			pointColors[i * 4 + 0] = col.r + col.a / 10.f;
-			pointColors[i * 4 + 1] = col.g + col.g / 10.f;
-			pointColors[i * 4 + 2] = col.b + col.b / 10.f;
-			pointColors[i * 4 + 3] = col.a;
-		}
-
-		// update the GPU data
-		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
-		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(points), NULL, GL_STREAM_DRAW));
-		CHECKED_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 3, points));
-
-		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
-		CHECKED_GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(pointColors), NULL, GL_STREAM_DRAW));
-		CHECKED_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * numP * 4, pointColors));
-
-		CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-	}
-
-	/* note for first update all particles should be "reborn"
-	 * which will initialize their positions */
-	void updateParticles()
-	{
-        // update the particles
-        for (int i = 0; i < trees.size(); i++) {
-            if (trees[i].rain) {
-                for (auto particle : particles)
-                {
-                    particle->update(t, h, g, keyToggles, trees[i].x, trees[i].y, trees[i].z);
-                }
-                t += h;
-
-                // Sort the particles by Z
-                auto temp = make_shared<MatrixStack>();
-                temp->rotate(camRot, vec3(0, 1, 0));
-
-                ParticleSorter sorter;
-                sorter.C = temp->topMatrix();
-                std::sort(particles.begin(), particles.end(), sorter);
-            }
-        }
-	}
-    void drawTree(double x, double y, double z, float thetaOffset, int material, std::shared_ptr<MatrixStack> Model) {
-        SetMaterial(material);
-        Model -> pushMatrix();
-            // draw trunk of tree
-            sTheta += thetaOffset;
-            Model->translate(vec3(x, y, z));
-            Model->pushMatrix();
-                Model->rotate(.2*sTheta, vec3(0, 0, 1));
-                Model->translate(vec3(0, 2, 0));
-                Model->pushMatrix();
-                    Model->rotate(.15*sTheta, vec3(0, 0, 1));
-                    Model->translate(vec3(0, 1.8,0));
-                    Model->pushMatrix();
-                        Model->rotate(.10*sTheta, vec3(0, 0, 1));
-                        Model->translate(vec3(0,1.6,0));
-                        Model->pushMatrix();
-                            Model->translate(vec3(0, 1.6,0));
-                            Model->pushMatrix();
-                                Model->rotate(.3*sTheta, vec3(0, 0, 1));
-                                Model->translate(vec3(0, 1.4,0));
-                                Model->rotate(0.05, vec3(0, 0, 1));
-                                Model->scale(vec3(2, .4, 2));
-                                setModel(prog2, Model);
-                                allShapes[0]->draw(prog2);
-                            Model->popMatrix();
-                            Model->rotate(-0.15, vec3(0, 0, 1));
-                            Model->scale(vec3(3, .6, 3));
-                            setModel(prog2, Model);
-                            allShapes[0]->draw(prog2);
-                        Model->popMatrix();
-                        Model->rotate(0.05, vec3(0, 0, 1));
-                        Model->scale(vec3(4, 1, 4));
-                        setModel(prog2, Model);
-                        allShapes[0]->draw(prog2);
-                    Model->popMatrix();
-                    Model->rotate(-0.15, vec3(0, 0, 1));
-                    Model->scale(vec3(5, 1.4, 5));
-                    setModel(prog2, Model);
-                    allShapes[0]->draw(prog2);
-                Model->popMatrix();
-                Model->rotate(0.05, vec3(0, 0, 1));
-                Model->scale(vec3(6, 1.4, 6));
-                setModel(prog2, Model);
-                allShapes[0]->draw(prog2);
-            Model->popMatrix();
-            Model->scale(vec3(1, 2, 2));
-            setModel(prog2, Model);
-            allShapes[0]->draw(prog2);
-        Model->popMatrix();
-    }
+   
     float get_rotation(vec3 a, vec3 b){
-        // theta = arccos(dot(a, b) / (magnitude(a) * magnitude(b))
         float dotProd = dot(a, b);
         float magnitudeA = length(a);
         float magnitudeB = length(b);
         return acos(dotProd / (magnitudeA * magnitudeB));
     }
     
-//    float rotateDog(vec3 currentOrientation, vec3 goalOrientation) {
-//
-//
-//    goalOrientation = goalOrientation.subtract(tM.position);
-//    Return -Math.atan2(lAt.z, lAt.x) - Math.PI/2;
-//    }
-    
     void drawMovableDog(std::shared_ptr<MatrixStack> Model, Dog *dog) {
-        //dog->position.x = cos(dog->theta) * dog->position.x + dog->offset;
-        //dog->position.z = sin(dog->theta) * dog->position.z + dog->offset;
-        //cout << dog->offset << endl;
+
         float dogx = dog->position.x;
         float dogz = dog->position.z;
         float theta = dog->isCollected ? 0 : sTheta;
-        // player.eye.x = dogX;
-        // player.eye.z = dogZ + 14;
-        for(int j = 0; j < trees.size(); j++){
-            float num = pow((trees[j].x - dogx),2);
-            //            num += pow((positions[k].y - positions[i].y),2);
-            num += pow((trees[j].z - dogz),2);
-            float d = pow(num,0.5);
-            float rad1 = .5;
-            float rad2 = 1;
-            
-            // if (d < (rad1 + rad2)) {
-            //     trees[j].rain = true;
-            //     isRaining = true;
-            // }
-            
-        }
         
         SetMaterial(10);
         Model->pushMatrix();
-        //Model->rotate(5, vec3(0, 1, 0));
-        //Model->translate(vec3(0, 0, -10));
+
         Model->translate(vec3(dogx, 0, dogz));
         
-        //float rotation = 180 * get_rotation(vec3(0, 0, 1), dog->orientation) / 3.14159 ;//- 90.0;
-        float rotation = get_rotation(vec3(0, 0, 1), dog->orientation) ;//- 90.0;
+        float rotation = get_rotation(vec3(0, 0, 1), dog->orientation) ;
 
         if(dog->orientation.x < 0){
             rotation *= -1;
         }
-        //cout << rotation << endl;
-
-//        if(dog->orientation.z > 0){
-//            //cout << "positive z" << endl;
-//            rotation += 1.5708;
-//        }
-        //cout << rotation << endl;
-        //Model->translate(vec3(1.15945 ,-1.17137 ,1.34475));
 
         Model->rotate(rotation, vec3(0, 1, 0));
         Model->scale(vec3(.5, .5, .5));
         Model->translate(-dogMiddle);
         setModel(prog2, Model);
         // head
-        allShapes[2]->draw(prog2);
+        allShapes[1]->draw(prog2);
         //Model->pushMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, -1.5));
@@ -627,11 +329,11 @@ public:
         Model->pushMatrix();
         setModel(prog2, Model);
         // back right leg bottom
-        allShapes[4]->draw(prog2);
+        allShapes[3]->draw(prog2);
         Model->popMatrix();
         setModel(prog2, Model);
         //back right leg top
-        allShapes[3]->draw(prog2);
+        allShapes[2]->draw(prog2);
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, 1.5));
@@ -640,11 +342,11 @@ public:
         Model->pushMatrix();
         setModel(prog2, Model);
         // front left leg bottom
-        allShapes[6]->draw(prog2);
+        allShapes[5]->draw(prog2);
         Model->popMatrix();
         setModel(prog2, Model);
         // front left leg top
-        allShapes[7]->draw(prog2);
+        allShapes[6]->draw(prog2);
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, -1.5));
@@ -653,11 +355,11 @@ public:
         Model->pushMatrix();
         setModel(prog2, Model);
         // back left leg bottom
-        allShapes[8]->draw(prog2);
+        allShapes[7]->draw(prog2);
         Model->popMatrix();
         setModel(prog2, Model);
         // back left leg top
-        allShapes[9]->draw(prog2);
+        allShapes[8]->draw(prog2);
         Model->popMatrix();
         Model->pushMatrix();
         Model->translate(vec3(0, -.9, 1.5));
@@ -666,105 +368,22 @@ public:
         Model->pushMatrix();
         setModel(prog2, Model);
         // front right leg bottom
-        allShapes[10]->draw(prog2);
+        allShapes[9]->draw(prog2);
         Model->popMatrix();
         setModel(prog2, Model);
         // front right leg top
-        allShapes[11]->draw(prog2);
+        allShapes[10]->draw(prog2);
         Model->popMatrix();
         setModel(prog2, Model);
         // bottom
-        allShapes[5]->draw(prog2);
-        Model->popMatrix();
-        //Model->popMatrix();
-    }
-    void drawDummy(double x, double y, double z, int material, std::shared_ptr<MatrixStack> Model) {
-        // draw dummy
-        SetMaterial(material);
-        Model->pushMatrix();
-            Model->rotate(.5, vec3(0, 0, 1));
-            Model->rotate(dummyTheta, vec3(0, 1, 0));
-            Model->translate(vec3(x, y, z));
-            Model->scale(vec3(.03, .03, .03));
-            setModel(prog2, Model);
-            for (int i = 12; i < allShapes.size(); i++) {
-                allShapes[i]->draw(prog2);
-            }
+        allShapes[4]->draw(prog2);
         Model->popMatrix();
     }
-    
+
     void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack>M) {
         glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
     }
-    void generateDogs(int numDogs){
-        for(int i = 0; i < numDogs; i++){
-            Dog newDog;
-            newDog.theta = 0;
-            newDog.offset = randFloat(0, 10);
-            newDog.position = vec3(randFloat(-gridLength/2 + 2, gridWidth/2 - 2), 0, randFloat(-gridLength/2 + 2, gridWidth/2 - 2));
-            //newDog.position = vec3(0,0,0);
-            //cout << newDog.position.x << " " << newDog.position.y << " " << newDog.position.z << endl;
-            newDog.speed = .3;
-            newDog.id = i;
-            newDog.pathRadius = randFloat(5, 10);
-            newDog.modelRadius = 2;
-            newDog.isCollected = false;
-            newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
-            //newDog.orientation = glm::normalize(vec3(1,0,-1));
-            dogs.push_back(newDog);
-        }
-    }
-    void updateDogs(){
-        for(int i = 0; i < dogs.size(); i++){
-            if(!dogs[i].isCollected)
-            {
-                checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);
-                dogs[i].move();
-            }
-        }
-    }
-    
-    void checkForCollisions(int dogIndex, float radius, vec3 position) {
-        
-        // check collisions against all the dogs
-        for (int i = dogIndex + 1; i < dogs.size(); i++) {
-            if (distance(position, dogs[i].position) <= radius + dogs[i].modelRadius) {
-                if (dogIndex == -1 && !dogs[i].isCollected) {
-                    collectDog(i);
-                    dogs[i].isCollected = true;
-                    
-                } else {
-                    dogs[dogIndex].orientation = dogs[dogIndex].orientation * vec3(-1, 1, -1);
-                }
-                return;
-            }
-        }
-        
-        float gridWidthMin = -gridWidth/2;
-        float gridWidthMax = gridWidth/2;
-        float gridLengthMin = -gridLength/2;
-        float gridLengthMax = gridLength/2;
-        
-        // check collisions against all the walls
-        
-        if (dogIndex != -1) {
-            
-            if (dogs[dogIndex].position.x >= gridWidthMax - radius || dogs[dogIndex].position.x <= gridWidthMin + radius) {
-                dogs[dogIndex].orientation.x *= -1;
-            }
-            if (dogs[dogIndex].position.z >= gridLengthMax - radius || dogs[dogIndex].position.z <= gridLengthMin + radius) {
-                dogs[dogIndex].orientation.z *= -1;
-            }
-        }
-    }
-    
-    
-    void collectDog(int dogIndex){
-        dogs[dogIndex].speed = 0;
-        dogsCollected += 1;
-        cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
-    }
-    
+
 	void render()
 	{
 		// Get current frame buffer size.
@@ -785,7 +404,7 @@ public:
         auto Model = make_shared<MatrixStack>();
         auto View = make_shared<MatrixStack>();
 
-        checkForCollisions(-1, 2, player.eye);
+        gameModel.checkForCollisions(-1, 2, player.eye);
 		// Create the matrix stacks
 		auto P = make_shared<MatrixStack>();
 		auto MV = make_shared<MatrixStack>();
@@ -802,86 +421,35 @@ public:
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
         CHECKED_GL_CALL(glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
         glUniform3f(prog2->getUniform("lightPos"), 0, 10, 0);
-        //for (int i = 0; i < trees.size()/2; i++) {
-            //drawTree(trees[i].x, .1, trees[i].z, trees[i].thetaOffset, trees[i].material, Model);
-            //drawDummy(dummies[i].x, dummies[i].y, dummies[i].z, dummies[i].material, Model);
-        //}
         
         SetMaterial(0);
         
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
-        if (curTime > dogSpawnIntervalLow && (dogs.size() + 1) <= maxNumDogs) {
+        if (curTime > gameModel.dogSpawnIntervalLow && (gameModel.dogs.size() + 1) <= gameModel.maxNumDogs) {
             glfwSetTime(0.0);
-            generateDogs(1);
+            gameModel.generateDogs(1);
         }
         
-        for(int i = 0; i < dogs.size(); i+=1){
-            drawMovableDog(Model, &(dogs[i]));
+        for(int i = 0; i < gameModel.dogs.size(); i+=1){
+            drawMovableDog(Model, &(gameModel.dogs[i]));
         }
-        
-       
-        
-    
-//        prog3->bind();
-//        texture0->bind(prog3->getUniform("Texture0"));
-//        CHECKED_GL_CALL(glUniformMatrix4fv(prog3->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-//        CHECKED_GL_CALL(glUniformMatrix4fv(prog3->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
-//        glUniform3f(prog3->getUniform("lightPos"), 0, 10, 0);
         
         SetMaterial(4);
         Model->pushMatrix();
-        Model->translate(vec3(0, -1.5, 0));
-        Model->scale(vec3(gridWidth, .5, gridLength));
+        Model->translate(vec3(0, -.75, 0));
+        Model->scale(vec3(gameModel.gridWidth, .5, gameModel.gridLength));
         setModel(prog3, Model);
         
-        allShapes[1]->draw(prog2);
+        allShapes[0]->draw(prog2);
       
         Model->popMatrix();
       
-//        prog3->unbind();
         prog2->unbind();
         
-        
-        
-		// Draw
-		prog->bind();
-		updateParticles();
-		updateGeom();
-
-		texture->bind(prog->getUniform("alphaTexture"));
-		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-		CHECKED_GL_CALL(glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, value_ptr(look)));
-        if (isRaining) {
-            CHECKED_GL_CALL(glEnableVertexAttribArray(0));
-            CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, pointsbuffer));
-            CHECKED_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0));
-
-            CHECKED_GL_CALL(glEnableVertexAttribArray(1));
-            CHECKED_GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, colorbuffer));
-            CHECKED_GL_CALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0));
-
-            CHECKED_GL_CALL(glVertexAttribDivisor(0, 1));
-            CHECKED_GL_CALL(glVertexAttribDivisor(1, 1));
-            // Draw the points !
-            CHECKED_GL_CALL(glDrawArraysInstanced(GL_POINTS, 0, 1, numP));
-
-            CHECKED_GL_CALL(glVertexAttribDivisor(0, 0));
-            CHECKED_GL_CALL(glVertexAttribDivisor(1, 0));
-            CHECKED_GL_CALL(glDisableVertexAttribArray(0));
-            CHECKED_GL_CALL(glDisableVertexAttribArray(1));
-        }
-		prog->unbind();
-     
-		// Pop matrix stacks.
-		MV->popMatrix();
-        dummyTheta -= .03;
-        updateDogs();
-        if (move == true) {
-            //animation update example
-            sTheta = sin(glfwGetTime());
-        }
+        gameModel.updateDogs();
+        sTheta = sin(glfwGetTime());
 		P->popMatrix();
 
 	}
@@ -989,9 +557,8 @@ int main(int argc, char **argv)
 	
 	application->initGeom(resourceDir);
     cout << application->dogMiddle.x << " " << application->dogMiddle.y << " " << application->dogMiddle.z << " " << endl;
-    application->initParticles();
 
-    application->generateDogs(1);
+    application->gameModel.generateDogs(1);
     
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 
