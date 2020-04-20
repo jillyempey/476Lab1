@@ -21,7 +21,7 @@ class Drawable;
 
 class Drawable {
     public:
-        void draw(shared_ptr<MatrixStack> Model);
+        void draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog);
         void SetMaterial(int i, shared_ptr<Program> prog);
         void setModel(shared_ptr<Program> prog, shared_ptr<MatrixStack>M);
         vector<shared_ptr<Shape>> allShapes;

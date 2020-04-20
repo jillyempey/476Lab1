@@ -8,7 +8,7 @@
 // Plane::Plane(){
 
 // }
-void Plane::draw(shared_ptr<MatrixStack> Model){
+void Plane::draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog){
     SetMaterial(4, prog);
     Model->pushMatrix();
     Model->translate(vec3(0, -1.75, 0));

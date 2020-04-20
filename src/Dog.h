@@ -22,7 +22,7 @@ class Dog : public Drawable {
     public:
     
         void move();
-        void draw(shared_ptr<MatrixStack> Model);
+        void draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog);
         vec3 position;
         vec3 orientation;
         vec3 lookAt;
@@ -34,7 +34,6 @@ class Dog : public Drawable {
         int id;
         bool isCollected;
         vec3 dogMiddle;
-        std::shared_ptr<Program> prog;
     
     private:
         

@@ -15,7 +15,7 @@ float get_rotation(vec3 a, vec3 b){
         float magnitudeB = length(b);
         return acos(dotProd / (magnitudeA * magnitudeB));
     }
-void Dog::draw(shared_ptr<MatrixStack> Model) {
+void Dog::draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog) {
 
         float dogx = position.x;
         float dogz = position.z;

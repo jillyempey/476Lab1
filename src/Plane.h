@@ -19,11 +19,9 @@ using namespace glm;
 
 class Plane : public Drawable {
     public:
-        shared_ptr<Program> prog;
         vector<shared_ptr<Shape>> allShapes;
-        //Plane();
         float gridWidth, gridLength;
-        void draw(shared_ptr<MatrixStack> Model);
+        void draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog);
 };
 
 #endif

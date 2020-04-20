@@ -22,7 +22,7 @@ GameModel::GameModel(){
     plane.gridLength = gridLength;
     plane.gridWidth = gridWidth;
     plane.allShapes = allShapesPlane;
-    plane.prog = bf_prog;
+    //plane.prog = bf_prog;
 }
 
 void GameModel::checkForCollisions(int dogIndex, float radius, vec3 position) {
@@ -65,7 +65,7 @@ void GameModel::collectDog(int dogIndex){
     }
 }
 
-void GameModel::generateDogs(int numDogs, shared_ptr<Program> prog, vector<shared_ptr<Shape>> allShapes){
+void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
     for(int i = 0; i < numDogs; i++){
         Dog newDog;
         newDog.theta = 0;
@@ -76,7 +76,7 @@ void GameModel::generateDogs(int numDogs, shared_ptr<Program> prog, vector<share
         newDog.pathRadius = randFloat(5, 10);
         newDog.modelRadius = 2;
         newDog.isCollected = false;
-        newDog.prog = prog;
+        //newDog.prog = prog;
         newDog.dogMiddle = dogMiddle;
         newDog.allShapes = allShapes;
         newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));

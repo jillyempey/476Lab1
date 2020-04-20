@@ -304,14 +304,14 @@ public:
         double curTime = glfwGetTime();
         if (curTime > gameModel.dogSpawnIntervalLow && (gameModel.dogs.size() + 1) <= gameModel.maxNumDogs) {
             glfwSetTime(0.0);
-            gameModel.generateDogs(1, bf_prog, allShapesDog);
+            gameModel.generateDogs(1, allShapesDog);
         }
         
         for(int i = 0; i < gameModel.dogs.size(); i+=1){
-            gameModel.dogs[i].draw(Model);
+            gameModel.dogs[i].draw(Model, bf_prog);
         }
 
-        gameModel.plane.draw(Model);
+        gameModel.plane.draw(Model, bf_prog);
         bf_prog->unbind();
         
         gameModel.updateDogs();
@@ -350,11 +350,11 @@ int main(int argc, char **argv)
 	vec3 planeMid;
 	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle);
     application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid);
-    application->gameModel.plane.prog = application->bf_prog;
+    //application->gameModel.plane.prog = application->bf_prog;
     application->gameModel.plane.allShapes = application->allShapesPlane;
 
     application->gameModel.dogMiddle = application->dogMiddle;
-    application->gameModel.generateDogs(1, application->bf_prog, application->allShapesDog);
+    application->gameModel.generateDogs(1, application->allShapesDog);
     
     application->scrollCallback(windowManager->getHandle(), 0, 0);
 
