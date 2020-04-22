@@ -9,7 +9,7 @@
 
 // }
 void Plane::draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog){
-    SetMaterial(4, prog);
+    SetMaterial(14, prog);
     Model->pushMatrix();
     Model->translate(vec3(0, -1.75, 0));
     Model->scale(vec3(gridWidth, .5, gridLength));

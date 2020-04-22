@@ -33,7 +33,7 @@ void Drawable::SetMaterial(int i, shared_ptr<Program> prog) {
                 glUniform3f(prog->getUniform("MatSpec"), 0.633, 0.727811, 0.633);
                 glUniform1f(prog->getUniform("shine"), 0.6);
                 break;
-            case 4: //hot pink1
+            case 14: //hot pink1
                 glUniform3f(prog->getUniform("MatAmb"), 1, 0.07843, 0.576);
                 glUniform3f(prog->getUniform("MatDif"), 1, 0.07843, 0.576);
                 glUniform3f(prog->getUniform("MatSpec"), 0.9922, 0.941176, 0.80784);
@@ -63,11 +63,17 @@ void Drawable::SetMaterial(int i, shared_ptr<Program> prog) {
                 glUniform3f(prog->getUniform("MatSpec"), 0.316228, 0.316228, 0.316228);
                 glUniform1f(prog->getUniform("shine"), 0.1);
                 break;
-            case 9: //bronze
+            case 4: //bronze
                 glUniform3f(prog->getUniform("MatAmb"), 0.25, 0.148, 0.06475);
                 glUniform3f(prog->getUniform("MatDif"), .4, .2368, 0.1036);
                 glUniform3f(prog->getUniform("MatSpec"), 0.774597, 0.458561, 0.200621);
                 glUniform1f(prog->getUniform("shine"), 76.8);
+                break;
+            case 9: //pearl
+                glUniform3f(prog->getUniform("MatAmb"), 0.25, 0.20725, 0.20725);
+                glUniform3f(prog->getUniform("MatDif"), 1.0, .829, 0.829);
+                glUniform3f(prog->getUniform("MatSpec"), 0.296648, 0.296648, 0.296648);
+                glUniform1f(prog->getUniform("shine"), 11.264);
                 break;
             case 10: //pearl
                 glUniform3f(prog->getUniform("MatAmb"), 0.25, 0.20725, 0.20725);
@@ -75,7 +81,8 @@ void Drawable::SetMaterial(int i, shared_ptr<Program> prog) {
                 glUniform3f(prog->getUniform("MatSpec"), 0.296648, 0.296648, 0.296648);
                 glUniform1f(prog->getUniform("shine"), 11.264);
                 break;
-            case 11: //ruby
+            default: //ruby
+                cout << "default" << endl;
                 glUniform3f(prog->getUniform("MatAmb"), 0.1745, 0.01175, 0.01175);
                 glUniform3f(prog->getUniform("MatDif"), .61424, .04136, 0.04136);
                 glUniform3f(prog->getUniform("MatSpec"), 0.727811, 0.626959, 0.626959);

@@ -32,6 +32,7 @@ class Dog : public Drawable {
         float modelRadius;
         float offset;
         int id;
+        int material;
         bool isCollected;
         vec3 dogMiddle;
     

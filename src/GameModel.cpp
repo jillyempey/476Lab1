@@ -11,7 +11,7 @@ GameModel::GameModel(){
     dogSpawnIntervalLow = 7.0;
     maxNumDogs = 4;
     dogsCollected = 0;
-    dogRad = 2;
+    dogRad = 2.0;
     gridWidth = 50;
     gridLength = 50;
     
@@ -100,9 +100,10 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
         newDog.speed = 500;
         newDog.id = i;
         newDog.pathRadius = randFloat(5, 10);
-        newDog.modelRadius = dogRad;
+        newDog.modelRadius = dogRad * .5;
         newDog.isCollected = false;
         //newDog.prog = prog;
+        newDog.material = 5; //floor(rand() % 10);
         newDog.dogMiddle = dogMiddle;
         newDog.allShapes = allShapes;
         newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));

@@ -21,7 +21,10 @@ void Dog::draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog) {
         float dogz = position.z;
         float sTheta = sin(glfwGetTime());
         float theta = isCollected ? 0 : sTheta;
-        SetMaterial(10, prog);
+        int mat = 4; //isCollected ? floor(rand() % 10) : material;
+        //cout << " material: " << mat << endl;
+        SetMaterial(mat, prog);
+
         Model->pushMatrix();
 
         Model->translate(vec3(dogx, 0, dogz));
