@@ -57,7 +57,8 @@ public:
     vec3 dogMin;
     vec3 dogMax;
     vec3 dogMiddle;
-    float dogRad, planeRad;
+    float dogRad = 0;
+	float planeRad = 0;
 
     bool beginning = true;
     

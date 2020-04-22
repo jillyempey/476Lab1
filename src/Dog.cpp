@@ -21,7 +21,7 @@ void Dog::draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog) {
         float dogz = position.z;
         float sTheta = sin(glfwGetTime());
         float theta = isCollected ? 0 : sTheta;
-        int mat = 4; //isCollected ? floor(rand() % 10) : material;
+        int mat = isCollected ? floor(rand() % 10) : material;
         //cout << " material: " << mat << endl;
         SetMaterial(mat, prog);
 

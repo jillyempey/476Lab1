@@ -9,16 +9,16 @@
 GameModel::GameModel(){
     vector<Dog> dogs;
     dogSpawnIntervalLow = 7.0;
-    maxNumDogs = 4;
+    maxNumDogs = 15;
     dogsCollected = 0;
     dogRad = 2.0;
-    gridWidth = 50;
-    gridLength = 50;
+    gridWidth = 70;
+    gridLength = 70;
     
-    gridWidthMin = -gridWidth/2;
-    gridWidthMax = gridWidth/2;
-    gridLengthMin = -gridLength/2;
-    gridLengthMax = gridLength/2;
+    gridWidthMin = -gridWidth/2 + 1;
+    gridWidthMax = gridWidth/2 - 1;
+    gridLengthMin = -gridLength/2 + 1;
+    gridLengthMax = gridLength/2 -1;
     plane.gridLength = gridLength;
     plane.gridWidth = gridWidth;
     plane.allShapes = allShapesPlane;
@@ -100,7 +100,7 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
         newDog.speed = 500;
         newDog.id = i;
         newDog.pathRadius = randFloat(5, 10);
-        newDog.modelRadius = dogRad * .5;
+        newDog.modelRadius = 2;//dogRad * .5;
         newDog.isCollected = false;
         //newDog.prog = prog;
         newDog.material = 5; //floor(rand() % 10);
