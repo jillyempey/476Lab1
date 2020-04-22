@@ -7,7 +7,7 @@
 
 
 void Dog::move(double frametime) {
-    position += (float(frametime) * speed) * orientation;
+    position += (float(frametime) * speed) * glm::normalize(orientation);
 }
 float get_rotation(vec3 a, vec3 b){
         float dotProd = dot(a, b);

@@ -38,6 +38,7 @@ class GameModel {
         float gridWidthMax;
         float gridLengthMin;
         float gridLengthMax;
+        float dogRad;
         
         void checkForCollisions(int dogIndex, float radius, vec3 position);
         void collectDog(int dogIndex);

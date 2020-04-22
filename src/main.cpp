@@ -38,6 +38,8 @@ public:
 	// Our shader program
     std::shared_ptr<Program> bf_prog;
     std::shared_ptr<Program> tex_prog;
+	std::shared_ptr<Program> toon_prog;
+
 
     Player player = Player();
     GameModel gameModel = GameModel();
@@ -55,7 +57,8 @@ public:
     vec3 dogMin;
     vec3 dogMax;
     vec3 dogMiddle;
-    
+    float dogRad, planeRad;
+
     bool beginning = true;
     
     float speed = 2;
@@ -81,7 +84,8 @@ public:
 	float t = 0.0f; //reset in init
 	float h = 0.01f;
 	glm::vec3 g = glm::vec3(0.0f, -0.01f, 0.0f);
-
+	float curFrameRate, lastFrameRate;
+	float framespeed = .01;
 	float camRot;
     
     float moveLight = 0;
@@ -194,6 +198,27 @@ public:
         tex_prog->addAttribute("vertPos");
         tex_prog->addAttribute("vertNor");
         tex_prog->addAttribute("vertTex");
+
+
+		toon_prog = make_shared<Program>();
+        toon_prog->setVerbose(true);
+        toon_prog->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/cartoon_frag.glsl");
+        if (! toon_prog->init())
+        {
+            std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+            exit(1);
+        }
+        toon_prog->addUniform("P");
+        toon_prog->addUniform("V");
+        toon_prog->addUniform("M");
+        toon_prog->addUniform("lightPos");
+        toon_prog->addUniform("MatAmb");
+        toon_prog->addUniform("MatDif");
+        toon_prog->addUniform("MatSpec");
+        toon_prog->addUniform("shine");
+        toon_prog->addAttribute("vertPos");
+        toon_prog->addAttribute("vertNor");
+        toon_prog->addAttribute("vertTex");
 	}
 
 	// Code to load in the three textures
@@ -206,7 +231,7 @@ public:
         texture0->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 	}
 
-	void initGeom(const std::string& resourceDirectory, vector<shared_ptr<Shape>> &meshes, vec3 &meshMiddle)
+	void initGeom(const std::string& resourceDirectory, vector<shared_ptr<Shape>> &meshes, vec3 &meshMiddle, float &radius)
 	{
 		// Initialize mesh
 		// Load geometry
@@ -246,6 +271,8 @@ public:
             meshMiddle.y = (gMin.y + gMax.y)/2;
             meshMiddle.z = (gMin.z + gMax.z)/2;
 
+			radius = length(gMax - meshMiddle);
+
 		}
 	}
 
@@ -257,11 +284,21 @@ public:
 		lasttime = actualtime;
 		return difference;
 	}
+	float max(float a, float b){
+		if(a > b) return a;
+		return b;
+	}
+	float min(float a, float b){
+		if(a < b) return a;
+		return b;
+	}
 	void render()
 	{
 		// Get current frame buffer size.
 		int width, height;
-        double framespeed = getElapsedTime();
+		curFrameRate = glfwGetTime();
+		
+		//cout << framespeed << endl;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		glViewport(0, 0, width, height);
 
@@ -290,10 +327,10 @@ public:
         
 		// camera rotate
 		MV->rotate(camRot, vec3(0, 1, 0));
-        bf_prog->bind();
-        CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-        CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
-        glUniform3f(bf_prog->getUniform("lightPos"), 0, 10, 0);
+        toon_prog->bind();
+        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
+        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
+        glUniform3f(toon_prog->getUniform("lightPos"), 0, 10, 0);
 
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
@@ -306,13 +343,18 @@ public:
         for(int i = 0; i < gameModel.dogs.size(); i+=1){
             gameModel.dogs[i].draw(Model, bf_prog);
         }
+        glUniform3f(toon_prog->getUniform("lightPos"), 0, 1, 0);
 
         gameModel.plane.draw(Model, bf_prog);
-        bf_prog->unbind();
+        toon_prog->unbind();
         
         gameModel.updateDogs(framespeed);
         
 		P->popMatrix();
+		lastFrameRate = glfwGetTime();
+		float tmp = lastFrameRate - curFrameRate;
+		framespeed = max(0, min(.0007, tmp));//getElapsedTime();
+		//if(tmp != framespeed) cout << "changed framespeed from " << tmp << endl;
 
 	}
     
@@ -344,11 +386,12 @@ int main(int argc, char **argv)
 	application->init(resourceDir);
 	application->initTex(resourceDir);
 	vec3 planeMid;
-	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle);
-    application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid);
+	application->initGeom(resourceDir + "/katiedog.obj", application->allShapesDog, application->dogMiddle, application->dogRad);
+    application->initGeom(resourceDir + "/cube.obj", application->allShapesPlane, planeMid, application->planeRad);
     application->gameModel.plane.allShapes = application->allShapesPlane;
 
     application->gameModel.dogMiddle = application->dogMiddle;
+	application->gameModel.dogRad = application->dogRad;
     application->gameModel.generateDogs(1, application->allShapesDog);
     
     application->scrollCallback(windowManager->getHandle(), 0, 0);

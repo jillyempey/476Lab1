@@ -10,6 +10,7 @@ Player::Player(){
     theta = -1.58;
     eye = glm::vec3(0, 1.5, 0);
     lookAtPoint = glm::vec3(0, 1.5, 1);
+    
     upVector = glm::vec3(0, 1, 0);
     
     speed = 2;
@@ -27,7 +28,7 @@ void Player::moveForward() {
     return;
 }
 void Player::scrollCallback(double deltaX, double deltaY){
-    phi = 0;// += .05*deltaY;
+    phi = 0; //+= .05*deltaY;
     theta -= .05*deltaX;
     
     if (phi > 1.39626) {
