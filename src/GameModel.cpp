@@ -71,7 +71,7 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
         newDog.theta = 0;
         newDog.offset = randFloat(0, 10);
         newDog.position = vec3(randFloat(gridWidthMin + 2, gridWidthMax - 2), 0, randFloat(gridLengthMin + 2, gridLengthMax - 2));
-        newDog.speed = .3;
+        newDog.speed = 5;
         newDog.id = i;
         newDog.pathRadius = randFloat(5, 10);
         newDog.modelRadius = 2;
@@ -85,12 +85,12 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
     cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
 }
 
-void GameModel::updateDogs(){
+void GameModel::updateDogs(double frametime){
     for(int i = 0; i < dogs.size(); i++){
         if(!dogs[i].isCollected)
         {
             checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);
-            dogs[i].move();
+            dogs[i].move(frametime);
         }
     }
 }

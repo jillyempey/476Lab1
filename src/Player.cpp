@@ -6,7 +6,7 @@
 #include "Texture.h"
 
 Player::Player(){
-    phi = 0;//-.3;
+    phi = 0;
     theta = -1.58;
     eye = glm::vec3(0, 1.5, 0);
     lookAtPoint = glm::vec3(0, 1.5, 1);

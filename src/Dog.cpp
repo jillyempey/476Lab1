@@ -6,8 +6,8 @@
 #include "Texture.h"
 
 
-void Dog::move() {
-    position += speed * orientation;
+void Dog::move(double frametime) {
+    position += (float(frametime) * speed) * orientation;
 }
 float get_rotation(vec3 a, vec3 b){
         float dotProd = dot(a, b);

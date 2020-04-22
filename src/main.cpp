@@ -90,7 +90,7 @@ public:
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
 		keyToggles[key] = ! keyToggles[key];
-        
+        player.updateLocalOrientation();
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -248,11 +248,20 @@ public:
 
 		}
 	}
+
+	double getElapsedTime()
+	{
+		static double lasttime = glfwGetTime();
+		double actualtime = glfwGetTime();
+		double difference = actualtime - lasttime;
+		lasttime = actualtime;
+		return difference;
+	}
 	void render()
 	{
 		// Get current frame buffer size.
 		int width, height;
-        
+        double framespeed = getElapsedTime();
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		glViewport(0, 0, width, height);
 
@@ -285,7 +294,7 @@ public:
         CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
         CHECKED_GL_CALL(glUniformMatrix4fv(bf_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
         glUniform3f(bf_prog->getUniform("lightPos"), 0, 10, 0);
-                
+
         // Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
@@ -301,7 +310,7 @@ public:
         gameModel.plane.draw(Model, bf_prog);
         bf_prog->unbind();
         
-        gameModel.updateDogs();
+        gameModel.updateDogs(framespeed);
         
 		P->popMatrix();
 

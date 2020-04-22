@@ -21,7 +21,7 @@ class Dog;
 class Dog : public Drawable {
     public:
     
-        void move();
+        void move(double frametime);
         void draw(shared_ptr<MatrixStack> Model, shared_ptr<Program> prog);
         vec3 position;
         vec3 orientation;

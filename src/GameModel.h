@@ -42,7 +42,7 @@ class GameModel {
         void checkForCollisions(int dogIndex, float radius, vec3 position);
         void collectDog(int dogIndex);
         void generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes);
-        void updateDogs();
+        void updateDogs(double frametime);
         float randFloat(float l, float r);
     
     private:
