@@ -6,7 +6,7 @@
 
 void error_callback(int error, const char *description)
 {
-	std::cerr << description << std::endl;
+	std::cerr << error << ": " << description << std::endl;
 }
 
 WindowManager * WindowManager::instance = nullptr;
@@ -44,6 +44,7 @@ bool WindowManager::init(int const width, int const height)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
 	// Create a windowed mode window and its OpenGL context.
 	windowHandle = glfwCreateWindow(width, height, "jilly & kt!! dog catcherz", nullptr, nullptr);

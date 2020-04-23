@@ -28,7 +28,7 @@ GameModel::GameModel(){
 void GameModel::checkForCollisions(int dogIndex, float radius, vec3 position) {
     
     // check collisions against all the dogs
-    for (int i = dogIndex + 1; i < dogs.size(); i++) {
+    for (int i = dogIndex + 1; i < int(dogs.size()); i++) {
         if (distance(position, dogs[i].position) <= radius + dogs[i].modelRadius) {
             if (dogIndex == -1 && !dogs[i].isCollected) {
                 collectDog(i);
@@ -113,7 +113,7 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
 }
 
 void GameModel::updateDogs(double frametime){
-    for(int i = 0; i < dogs.size(); i++){
+    for(int i = 0; i < int(dogs.size()); i++){
         if(!dogs[i].isCollected)
         {
             checkForCollisions(i, dogs[i].modelRadius, dogs[i].position);

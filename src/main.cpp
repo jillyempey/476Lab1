@@ -295,12 +295,13 @@ public:
 	}
 	void render()
 	{
+		
 		// Get current frame buffer size.
 		int width, height;
 		curFrameRate = glfwGetTime();
 		
 		//cout << framespeed << endl;
-		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
+		CHECKED_GL_CALL(glfwGetFramebufferSize(windowManager->getHandle(), &width, &height));
 		glViewport(0, 0, width, height);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -328,20 +329,22 @@ public:
         
 		// camera rotate
 		MV->rotate(camRot, vec3(0, 1, 0));
-        toon_prog->bind();
-        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
-        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
-        glUniform3f(toon_prog->getUniform("lightPos"), 0, 10, 0);
-
-        // Generate a dog at a random location if 7 seconds have
+		// Generate a dog at a random location if 7 seconds have
         // passed since the last dog was generated
         double curTime = glfwGetTime();
-        if (curTime > gameModel.dogSpawnIntervalLow && (gameModel.dogs.size() + 1) <= gameModel.maxNumDogs) {
+        if (curTime > gameModel.dogSpawnIntervalLow && (int(gameModel.dogs.size()) + 1) <= gameModel.maxNumDogs) {
             glfwSetTime(0.0);
             gameModel.generateDogs(1, allShapesDog);
         }
+        toon_prog->bind();
+        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix())));
+        CHECKED_GL_CALL(glUniformMatrix4fv(toon_prog->getUniform("V"), 1, GL_FALSE, value_ptr(look)));
+        CHECKED_GL_CALL(glUniform3f(toon_prog->getUniform("lightPos"), 0, 10, 0));
+		
+
         
-        for(int i = 0; i < gameModel.dogs.size(); i+=1){
+        
+        for(int i = 0; i < int(gameModel.dogs.size()); i+=1){
             gameModel.dogs[i].draw(Model, bf_prog);
         }
         glUniform3f(toon_prog->getUniform("lightPos"), 0, 1, 0);
@@ -402,9 +405,13 @@ int main(int argc, char **argv)
 	{
 		// Render scene.
 		application->render();
-
+		//cout << windowManager->getHandle() << endl;
 		// Swap front and back buffers.
-		glfwSwapBuffers(windowManager->getHandle());
+		GLenum err = glGetError();
+		if(err != GL_NO_ERROR){
+			cout << err << endl;
+		}
+		CHECKED_GL_CALL(glfwSwapBuffers(windowManager->getHandle()));
 		// Poll for and process events.
 		glfwPollEvents();
 	}
