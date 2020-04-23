@@ -82,7 +82,6 @@ void Drawable::SetMaterial(int i, shared_ptr<Program> prog) {
                 glUniform1f(prog->getUniform("shine"), 11.264);
                 break;
             default: //ruby
-                cout << "default" << endl;
                 glUniform3f(prog->getUniform("MatAmb"), 0.1745, 0.01175, 0.01175);
                 glUniform3f(prog->getUniform("MatDif"), .61424, .04136, 0.04136);
                 glUniform3f(prog->getUniform("MatSpec"), 0.727811, 0.626959, 0.626959);

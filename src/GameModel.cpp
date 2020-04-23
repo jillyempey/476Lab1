@@ -103,7 +103,7 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
         newDog.modelRadius = 2;//dogRad * .5;
         newDog.isCollected = false;
         //newDog.prog = prog;
-        newDog.material = 5; //floor(rand() % 10);
+        newDog.material = 8; //floor(rand() % 10);
         newDog.dogMiddle = dogMiddle;
         newDog.allShapes = allShapes;
         newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
