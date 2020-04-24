@@ -28,13 +28,16 @@ GameModel::GameModel(){
 void GameModel::checkForCollisions(int dogIndex, float radius, vec3 position) {
     
     // check collisions against all the dogs
+    //cout << "checking collisions" << endl;
+
     for (int i = dogIndex + 1; i < int(dogs.size()); i++) {
         if (distance(position, dogs[i].position) <= radius + dogs[i].modelRadius) {
             if (dogIndex == -1 && !dogs[i].isCollected) {
                 collectDog(i);
                 dogs[i].isCollected = true;
                 
-            } else {
+            } else if(dogIndex != -1) {
+                //if (dogIndex == -1) cout << "bad indexing!!" << endl;
                 dogs[dogIndex].orientation = dogs[dogIndex].orientation * vec3(-1, 1, -1);
             }
             return;
@@ -109,10 +112,11 @@ void GameModel::generateDogs(int numDogs, vector<shared_ptr<Shape>> allShapes){
         newDog.orientation = glm::normalize(vec3(randFloat(-1, 1), 0, randFloat(-1, 1)));
         dogs.push_back(newDog);
     }
-    cout << "Dogs Collected: " << dogsCollected << " / " << dogs.size() << " total dogs" << endl;
+    cout << "Dogs Collected: " << dogsCollected << " / " << int(dogs.size()) << " total dogs" << endl;
 }
 
 void GameModel::updateDogs(double frametime){
+    //cout << "updating dogs" << endl;
     for(int i = 0; i < int(dogs.size()); i++){
         if(!dogs[i].isCollected)
         {
